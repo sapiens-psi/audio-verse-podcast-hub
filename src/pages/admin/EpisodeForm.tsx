@@ -100,8 +100,17 @@ const EpisodeForm = () => {
           description: "Episódio atualizado com sucesso!",
         });
       } else {
-        // Create new episode
-        addEpisode(values);
+        // Create new episode - ensure all fields are provided (not optional)
+        const newEpisode = {
+          titulo: values.titulo,
+          descricao: values.descricao,
+          audio: values.audio,
+          capa: values.capa,
+          publicado_em: values.publicado_em,
+          categoria: values.categoria
+        };
+        
+        addEpisode(newEpisode);
         toast({
           title: "Sucesso!",
           description: "Novo episódio criado com sucesso!",

@@ -32,7 +32,7 @@ const AdminLayout = () => {
       <div className="flex min-h-screen w-full">
         <Sidebar 
           className={`${sidebarOpen ? "w-64" : "w-14"} transition-all duration-300 ease-in-out`} 
-          collapsible
+          collapsible="icon"
         >
           <div className="flex items-center justify-between p-4">
             {sidebarOpen && <span className="font-bold text-lg text-podcast">Admin Panel</span>}
@@ -40,7 +40,7 @@ const AdminLayout = () => {
           </div>
 
           <SidebarContent>
-            <SidebarGroup defaultOpen>
+            <SidebarGroup>
               <SidebarGroupLabel>Menu</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
