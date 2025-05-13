@@ -13,13 +13,16 @@ import {
   SidebarProvider,
   SidebarTrigger
 } from "@/components/ui/sidebar";
-import { Home, Plus, List } from "lucide-react";
+import { Home, Plus, List, LogOut } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 
 const AdminLayout = () => {
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+  const { signOut } = useAuth();
 
   const sidebarMenuItems = [
     { icon: Home, label: "Dashboard", path: "/admin" },
@@ -67,6 +70,17 @@ const AdminLayout = () => {
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
+            
+            <div className="mt-auto p-4">
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start text-gray-600 hover:bg-gray-100" 
+                onClick={signOut}
+              >
+                <LogOut className="h-5 w-5 mr-2" />
+                {sidebarOpen && "Sair"}
+              </Button>
+            </div>
           </SidebarContent>
         </Sidebar>
 

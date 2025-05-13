@@ -1,112 +1,133 @@
 
 import { useState, useEffect } from "react";
-import { getEpisodes, getCategories } from "@/lib/mockData";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { List, Plus } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Podcast, CalendarDays } from "lucide-react";
+
+interface DashboardStats {
+  totalEpisodes: number;
+  latestEpisode: string | null;
+  categories: string[];
+}
 
 const Dashboard = () => {
-  const [episodeCount, setEpisodeCount] = useState(0);
-  const [categoryCount, setCategoryCount] = useState(0);
-  const [recentEpisodes, setRecentEpisodes] = useState<any[]>([]);
+  const [stats, setStats] = useState<DashboardStats>({
+    totalEpisodes: 0,
+    latestEpisode: null,
+    categories: [],
+  });
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
-    // Get data for dashboard
-    const episodes = getEpisodes();
-    const categories = getCategories();
-    
-    setEpisodeCount(episodes.length);
-    setCategoryCount(categories.length);
-    
-    // Get 5 most recent episodes
-    const sortedEpisodes = [...episodes].sort(
-      (a, b) => new Date(b.publicado_em).getTime() - new Date(a.publicado_em).getTime()
-    ).slice(0, 5);
-    
-    setRecentEpisodes(sortedEpisodes);
-  }, []);
+    const fetchStats = async () => {
+      setLoading(true);
+      try {
+        // Get total episodes
+        const { count: totalEpisodes, error: countError } = await supabase
+          .from("episodes")
+          .select("*", { count: "exact", head: true });
+
+        if (countError) throw countError;
+
+        // Get latest episode
+        const { data: latestData, error: latestError } = await supabase
+          .from("episodes")
+          .select("titulo, publicado_em")
+          .order("publicado_em", { ascending: false })
+          .limit(1)
+          .single();
+
+        if (latestError && latestError.code !== "PGRST116") throw latestError;
+
+        // Get unique categories
+        const { data: categoriesData, error: categoriesError } = await supabase
+          .from("episodes")
+          .select("categoria");
+
+        if (categoriesError) throw categoriesError;
+
+        // Extract unique categories
+        const uniqueCategories = Array.from(
+          new Set(categoriesData?.map((item) => item.categoria) || [])
+        );
+
+        setStats({
+          totalEpisodes: totalEpisodes || 0,
+          latestEpisode: latestData?.titulo || null,
+          categories: uniqueCategories,
+        });
+      } catch (error) {
+        console.error("Error fetching dashboard stats:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchStats();
+    }
+  }, [user]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p>Carregando estatísticas...</p>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold">Dashboard</h1>
       
-      <div className="grid md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium text-gray-500">Total de Episódios</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Total de Episódios</CardTitle>
+            <Podcast className="h-5 w-5 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{episodeCount}</p>
+            <div className="text-3xl font-bold">{stats.totalEpisodes}</div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium text-gray-500">Categorias</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Último Episódio</CardTitle>
+            <CalendarDays className="h-5 w-5 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{categoryCount}</p>
+            <div className="text-2xl font-bold truncate">
+              {stats.latestEpisode || "Nenhum episódio publicado"}
+            </div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium text-gray-500">Ações Rápidas</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Categorias</CardTitle>
+            <span className="text-base font-bold">{stats.categories.length}</span>
           </CardHeader>
-          <CardContent className="flex flex-col sm:flex-row gap-2">
-            <Button asChild className="flex-1">
-              <Link to="/admin/episodes/new">
-                <Plus className="mr-2 h-4 w-4" />
-                Novo Episódio
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="flex-1">
-              <Link to="/admin/episodes">
-                <List className="mr-2 h-4 w-4" />
-                Listar Todos
-              </Link>
-            </Button>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {stats.categories.length > 0 ? (
+                stats.categories.map((category) => (
+                  <span
+                    key={category}
+                    className="bg-gray-100 text-xs px-2 py-1 rounded-full"
+                  >
+                    {category}
+                  </span>
+                ))
+              ) : (
+                <span className="text-gray-500">Nenhuma categoria encontrada</span>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Episódios Recentes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {recentEpisodes.length === 0 ? (
-              <p className="text-gray-500">Nenhum episódio disponível</p>
-            ) : (
-              recentEpisodes.map((episode) => (
-                <div key={episode.id} className="flex items-center justify-between border-b pb-4">
-                  <div className="flex items-center">
-                    <img 
-                      src={episode.capa} 
-                      alt={episode.titulo} 
-                      className="w-12 h-12 object-cover rounded mr-4"
-                    />
-                    <div>
-                      <h3 className="font-medium">{episode.titulo}</h3>
-                      <p className="text-sm text-gray-500">{episode.categoria} • {new Date(episode.publicado_em).toLocaleDateString('pt-BR')}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link to={`/admin/episodes/${episode.id}`}>Editar</Link>
-                    </Button>
-                    <Button variant="outline" size="sm" asChild>
-                      <Link to={`/episodes/${episode.id}`} target="_blank">Visualizar</Link>
-                    </Button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };

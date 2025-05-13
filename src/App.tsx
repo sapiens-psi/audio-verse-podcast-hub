@@ -1,53 +1,54 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import AppLayout from '@/components/layout/AppLayout';
+import AdminLayout from '@/components/layout/AdminLayout';
+import Index from '@/pages/Index';
+import EpisodeDetails from '@/pages/EpisodeDetails';
+import Search from '@/pages/Search';
+import NotFound from '@/pages/NotFound';
+import Dashboard from '@/pages/admin/Dashboard';
+import EpisodeForm from '@/pages/admin/EpisodeForm';
+import EpisodeList from '@/pages/admin/EpisodeList';
+import Login from '@/pages/auth/Login';
+import Register from '@/pages/auth/Register';
+import { Toaster } from '@/components/ui/toaster';
+import { AuthProvider } from '@/contexts/AuthContext';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
-// Pages
-import Index from "./pages/Index";
-import Search from "./pages/Search";
-import EpisodeDetails from "./pages/EpisodeDetails";
-import Dashboard from "./pages/admin/Dashboard";
-import EpisodeList from "./pages/admin/EpisodeList";
-import EpisodeForm from "./pages/admin/EpisodeForm";
-import NotFound from "./pages/NotFound";
-
-// Layouts
-import AppLayout from "./components/layout/AppLayout";
-import AdminLayout from "./components/layout/AdminLayout";
-
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
+function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
         <Routes>
-          {/* Public Routes */}
-          <Route element={<AppLayout />}>
-            <Route path="/" element={<Index />} />
-            <Route path="/search" element={<Search />} />
-            <Route path="/episodes/:id" element={<EpisodeDetails />} />
+          {/* Public routes */}
+          <Route path="/" element={<AppLayout />}>
+            <Route index element={<Index />} />
+            <Route path="episodes/:id" element={<EpisodeDetails />} />
+            <Route path="search" element={<Search />} />
           </Route>
           
-          {/* Admin Routes */}
-          <Route path="/admin" element={<AdminLayout />}>
+          {/* Auth routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          
+          {/* Protected admin routes */}
+          <Route path="/admin" element={
+            <ProtectedRoute>
+              <AdminLayout />
+            </ProtectedRoute>
+          }>
             <Route index element={<Dashboard />} />
             <Route path="episodes" element={<EpisodeList />} />
             <Route path="episodes/new" element={<EpisodeForm />} />
-            <Route path="episodes/:id" element={<EpisodeForm />} />
+            <Route path="episodes/:id/edit" element={<EpisodeForm />} />
           </Route>
           
-          {/* 404 Page */}
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+        <Toaster />
+      </AuthProvider>
+    </BrowserRouter>
+  );
+}
 
 export default App;

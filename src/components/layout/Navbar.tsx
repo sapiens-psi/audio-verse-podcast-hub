@@ -1,11 +1,13 @@
 
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Home, Search } from "lucide-react";
+import { Home, Search, LogIn, User } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
   const location = useLocation();
   const isAdminSection = location.pathname.startsWith("/admin");
+  const { user } = useAuth();
 
   return (
     <nav className="w-full py-4 px-6 border-b flex items-center justify-between bg-white shadow-sm">
@@ -30,16 +32,17 @@ const Navbar = () => {
       </div>
 
       <div className="flex items-center space-x-3">
-        {!isAdminSection ? (
+        {user ? (
           <Button variant="outline" asChild>
-            <Link to="/admin">
-              Área Administrativa
+            <Link to={isAdminSection ? "/" : "/admin"}>
+              {isAdminSection ? "Ver Site" : "Área Administrativa"}
             </Link>
           </Button>
         ) : (
           <Button variant="outline" asChild>
-            <Link to="/">
-              Ver Site
+            <Link to="/login">
+              <LogIn className="mr-2 h-4 w-4" />
+              Entrar
             </Link>
           </Button>
         )}
