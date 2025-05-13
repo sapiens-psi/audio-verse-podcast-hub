@@ -34,24 +34,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Handle auth events if needed
         if (event === 'SIGNED_IN') {
-          // Defer any additional data fetching
+          // Defer any additional data fetching to avoid potential deadlocks
           setTimeout(() => {
             navigate('/admin');
           }, 0);
         } else if (event === 'SIGNED_OUT') {
-          navigate('/login');
+          setTimeout(() => {
+            navigate('/login');
+          }, 0);
         }
       }
     );
 
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setAuthState({
-        session,
-        user: session?.user ?? null,
-        isLoading: false,
-      });
-    });
+    const getInitialSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setAuthState({
+          session,
+          user: session?.user ?? null,
+          isLoading: false,
+        });
+      } catch (error) {
+        console.error("Error getting session:", error);
+        setAuthState(prev => ({ ...prev, isLoading: false }));
+      }
+    };
+
+    getInitialSession();
 
     return () => {
       subscription?.unsubscribe();
