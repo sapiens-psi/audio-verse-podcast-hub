@@ -32,6 +32,11 @@ const AdminLayout = () => {
     { icon: Plus, label: "Novo Episódio", path: "/admin/episodes/new" }
   ];
 
+  const handleSignOut = (e: React.MouseEvent) => {
+    e.preventDefault();
+    signOut();
+  };
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
@@ -77,7 +82,7 @@ const AdminLayout = () => {
               <Button 
                 variant="ghost" 
                 className="w-full justify-start text-gray-600 hover:bg-gray-100" 
-                onClick={() => signOut()}
+                onClick={handleSignOut}
               >
                 <LogOut className="h-5 w-5 mr-2" />
                 {sidebarOpen && "Sair"}

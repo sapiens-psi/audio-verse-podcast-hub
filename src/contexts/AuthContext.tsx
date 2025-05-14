@@ -22,6 +22,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
   const navigate = useNavigate();
   const [initialSessionChecked, setInitialSessionChecked] = useState(false);
+  const [isAuthChangeFromSignIn, setIsAuthChangeFromSignIn] = useState(false);
 
   useEffect(() => {
     // First get initial session to know our starting point
@@ -46,41 +47,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Then set up the auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        const previousUser = authState.user;
-        const currentUser = session?.user ?? null;
+        console.log("Auth state change:", event);
         
         setAuthState({
           session,
-          user: currentUser,
+          user: session?.user ?? null,
           isLoading: false,
         });
         
-        // Only trigger navigation on specific auth events
-        if (event === 'SIGNED_IN' && !previousUser) {
-          // New sign in, navigate to admin
+        // Only navigate on explicit sign in/out events, not on token refresh
+        if (event === 'SIGNED_IN' && isAuthChangeFromSignIn) {
+          // Reset the flag
+          setIsAuthChangeFromSignIn(false);
           setTimeout(() => navigate('/admin'), 0);
         } else if (event === 'SIGNED_OUT') {
-          // User signed out, navigate to login
           setTimeout(() => navigate('/login'), 0);
         }
-        // For other auth events or when just refreshing the session token, do nothing
+        // For token refreshes or other auth events, we don't navigate
       }
     );
 
     return () => {
-      if (subscription) {
-        subscription.unsubscribe();
-      }
+      subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, isAuthChangeFromSignIn]);
 
   const signIn = async (email: string, password: string) => {
     try {
+      setIsAuthChangeFromSignIn(true); // Set flag before sign in
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      
-      // Navigation will be handled by the onAuthStateChange listener
+      // Navigation will happen in onAuthStateChange
     } catch (error: any) {
+      setIsAuthChangeFromSignIn(false); // Reset flag if error
       toast({
         title: "Erro ao entrar",
         description: error.message,

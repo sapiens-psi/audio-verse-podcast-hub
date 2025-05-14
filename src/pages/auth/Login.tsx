@@ -12,14 +12,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { signIn } = useAuth();
-  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +25,7 @@ const Login = () => {
     
     try {
       await signIn(email, password);
-      navigate('/admin');
+      // Não precisamos navegar explicitamente, o AuthContext cuidará disso
     } catch (error) {
       console.error(error);
     } finally {
