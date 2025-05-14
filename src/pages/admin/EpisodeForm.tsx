@@ -13,6 +13,8 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Episode } from "@/components/episodes/EpisodeCard";
+import { Category } from "@/components/categories/CategoryCard";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const formSchema = z.object({
   titulo: z.string().min(3, "O título deve ter pelo menos 3 caracteres"),
@@ -21,6 +23,7 @@ const formSchema = z.object({
   capa: z.string().url("Forneça uma URL válida para a imagem de capa"),
   publicado_em: z.string().min(1, "A data de publicação é obrigatória"),
   categoria: z.string().min(1, "A categoria é obrigatória"),
+  category_id: z.string().uuid("Selecione uma categoria válida"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -30,6 +33,7 @@ const EpisodeForm = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
+  const [categories, setCategories] = useState<Category[]>([]);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -40,8 +44,36 @@ const EpisodeForm = () => {
       capa: "",
       publicado_em: new Date().toISOString().split("T")[0],
       categoria: "",
+      category_id: "",
     },
   });
+
+  useEffect(() => {
+    // Fetch categories for dropdown
+    const fetchCategories = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("categories")
+          .select("*")
+          .order("titulo", { ascending: true });
+        
+        if (error) throw error;
+        
+        if (data) {
+          setCategories(data as Category[]);
+        }
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar as categorias",
+          variant: "destructive",
+        });
+      }
+    };
+    
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     // Fetch episode data if editing
@@ -66,6 +98,7 @@ const EpisodeForm = () => {
               capa: data.capa,
               publicado_em: formattedDate,
               categoria: data.categoria,
+              category_id: data.category_id || "",
             });
           }
         } catch (error) {
@@ -108,6 +141,7 @@ const EpisodeForm = () => {
             capa: values.capa,
             publicado_em: values.publicado_em,
             categoria: values.categoria,
+            category_id: values.category_id,
           })
           .eq("id", id);
           
@@ -126,6 +160,7 @@ const EpisodeForm = () => {
           capa: values.capa,
           publicado_em: values.publicado_em,
           categoria: values.categoria,
+          category_id: values.category_id,
           user_id: user.id
         };
         
@@ -240,7 +275,7 @@ const EpisodeForm = () => {
                 name="categoria"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Categoria</FormLabel>
+                    <FormLabel>Tag da Categoria</FormLabel>
                     <FormControl>
                       <Input placeholder="Categoria" {...field} />
                     </FormControl>
@@ -249,6 +284,35 @@ const EpisodeForm = () => {
                 )}
               />
             </div>
+            
+            <FormField
+              control={form.control}
+              name="category_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Categoria</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value}
+                    value={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma categoria" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.titulo}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
             <div className="flex justify-end space-x-4">
               <Button 

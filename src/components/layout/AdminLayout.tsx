@@ -13,7 +13,7 @@ import {
   SidebarProvider,
   SidebarTrigger
 } from "@/components/ui/sidebar";
-import { Home, Plus, List, LogOut } from "lucide-react";
+import { Home, Plus, List, LogOut, FolderPlus } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,6 +26,8 @@ const AdminLayout = () => {
 
   const sidebarMenuItems = [
     { icon: Home, label: "Dashboard", path: "/admin" },
+    { icon: FolderPlus, label: "Gerenciar Categorias", path: "/admin/categories" },
+    { icon: Plus, label: "Nova Categoria", path: "/admin/categories/new" },
     { icon: List, label: "Listar Episódios", path: "/admin/episodes" },
     { icon: Plus, label: "Novo Episódio", path: "/admin/episodes/new" }
   ];

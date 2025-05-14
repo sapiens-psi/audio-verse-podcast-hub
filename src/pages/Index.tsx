@@ -1,42 +1,57 @@
 
 import { useState, useEffect } from "react";
-import EpisodeCard, { Episode } from "@/components/episodes/EpisodeCard";
-import { getEpisodes, getCategories, searchEpisodes } from "@/lib/mockData";
+import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
+import CategoryCard, { Category } from "@/components/categories/CategoryCard";
 
 const Index = () => {
-  const [episodes, setEpisodes] = useState<Episode[]>([]);
-  const [filteredEpisodes, setFilteredEpisodes] = useState<Episode[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [filteredCategories, setFilteredCategories] = useState<Category[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Get all episodes and categories on component mount
-    const allEpisodes = getEpisodes();
-    setEpisodes(allEpisodes);
-    setFilteredEpisodes(allEpisodes);
-    setCategories(getCategories());
+    fetchCategories();
   }, []);
 
+  const fetchCategories = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from("categories")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      
+      if (data) {
+        setCategories(data);
+        setFilteredCategories(data);
+      }
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    if (searchQuery.trim() === "" && !selectedCategory) {
-      setFilteredEpisodes(episodes);
+    if (searchQuery.trim() === "") {
+      setFilteredCategories(categories);
       return;
     }
 
-    const results = searchEpisodes(searchQuery, selectedCategory || undefined);
-    setFilteredEpisodes(results);
-  }, [searchQuery, selectedCategory, episodes]);
+    const results = categories.filter(category =>
+      category.titulo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      category.descricao.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    setFilteredCategories(results);
+  }, [searchQuery, categories]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
-  };
-
-  const handleCategorySelect = (category: string) => {
-    setSelectedCategory(prevCategory => prevCategory === category ? "" : category);
   };
 
   return (
@@ -49,42 +64,33 @@ const Index = () => {
       </div>
 
       <div className="mb-8">
-        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Buscar episódios..."
-              value={searchQuery}
-              onChange={handleSearchChange}
-              className="pl-10"
-            />
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            {categories.map((category) => (
-              <Button 
-                key={category}
-                variant={selectedCategory === category ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleCategorySelect(category)}
-                className={selectedCategory === category ? "bg-podcast hover:bg-podcast-dark" : ""}
-              >
-                {category}
-              </Button>
-            ))}
-          </div>
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Buscar categorias..."
+            value={searchQuery}
+            onChange={handleSearchChange}
+            className="pl-10"
+          />
         </div>
       </div>
 
-      {filteredEpisodes.length === 0 ? (
+      {isLoading ? (
+        <div className="flex justify-center py-12">
+          <div className="w-3 h-3 rounded-full bg-podcast animate-pulse-light mx-1"></div>
+          <div className="w-3 h-3 rounded-full bg-podcast animate-pulse-light mx-1" style={{ animationDelay: "300ms" }}></div>
+          <div className="w-3 h-3 rounded-full bg-podcast animate-pulse-light mx-1" style={{ animationDelay: "600ms" }}></div>
+        </div>
+      ) : filteredCategories.length === 0 ? (
         <div className="text-center py-12">
-          <h3 className="text-xl font-semibold text-gray-700">Nenhum episódio encontrado</h3>
-          <p className="text-gray-500 mt-2">Tente modificar sua busca ou filtros</p>
+          <h3 className="text-xl font-semibold text-gray-700">Nenhuma categoria encontrada</h3>
+          <p className="text-gray-500 mt-2">Tente modificar sua busca</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filteredEpisodes.map(episode => (
-            <div key={episode.id} className="h-full">
-              <EpisodeCard episode={episode} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
+          {filteredCategories.map(category => (
+            <div key={category.id} className="h-full">
+              <CategoryCard category={category} />
             </div>
           ))}
         </div>

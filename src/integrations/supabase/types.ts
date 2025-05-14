@@ -9,11 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      categories: {
+        Row: {
+          created_at: string
+          descricao: string
+          id: string
+          imagem: string
+          titulo: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          descricao: string
+          id?: string
+          imagem: string
+          titulo: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string
+          id?: string
+          imagem?: string
+          titulo?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       episodes: {
         Row: {
           audio: string
           capa: string
           categoria: string
+          category_id: string | null
           created_at: string
           descricao: string
           id: string
@@ -25,6 +53,7 @@ export type Database = {
           audio: string
           capa: string
           categoria: string
+          category_id?: string | null
           created_at?: string
           descricao: string
           id?: string
@@ -36,6 +65,7 @@ export type Database = {
           audio?: string
           capa?: string
           categoria?: string
+          category_id?: string | null
           created_at?: string
           descricao?: string
           id?: string
@@ -43,7 +73,15 @@ export type Database = {
           titulo?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "episodes_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
