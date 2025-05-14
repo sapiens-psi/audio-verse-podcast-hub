@@ -1,4 +1,3 @@
-
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import AdminLayout from '@/components/layout/AdminLayout';
@@ -29,6 +28,7 @@ function App() {
             <Route path="categories/:id" element={<CategoryDetails />} />
             <Route path="episodes/:id" element={<EpisodeDetails />} />
             <Route path="search" element={<Search />} />
+            <Route path="/categoria/:id" element={<CategoryDetails />} />
           </Route>
           
           {/* Auth routes */}

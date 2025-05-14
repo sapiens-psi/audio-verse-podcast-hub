@@ -39,9 +39,6 @@ export type Database = {
       episodes: {
         Row: {
           audio: string
-          capa: string
-          categoria: string
-          category_id: string | null
           created_at: string
           descricao: string
           id: string
@@ -51,9 +48,6 @@ export type Database = {
         }
         Insert: {
           audio: string
-          capa: string
-          categoria: string
-          category_id?: string | null
           created_at?: string
           descricao: string
           id?: string
@@ -63,9 +57,6 @@ export type Database = {
         }
         Update: {
           audio?: string
-          capa?: string
-          categoria?: string
-          category_id?: string | null
           created_at?: string
           descricao?: string
           id?: string
@@ -73,15 +64,7 @@ export type Database = {
           titulo?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "episodes_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       profiles: {
         Row: {

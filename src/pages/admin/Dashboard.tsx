@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,13 +43,13 @@ const Dashboard = () => {
         // Get unique categories
         const { data: categoriesData, error: categoriesError } = await supabase
           .from("episodes")
-          .select("categoria");
+          .select("categoria_id");
 
         if (categoriesError) throw categoriesError;
 
         // Extract unique categories
         const uniqueCategories = Array.from(
-          new Set(categoriesData?.map((item) => item.categoria) || [])
+          new Set(categoriesData?.map((item) => item.categoria_id) || [])
         );
 
         setStats({
