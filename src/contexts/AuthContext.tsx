@@ -23,7 +23,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Set up the auth state listener
+    // Set up the auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setAuthState({
@@ -34,7 +34,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Handle auth events if needed
         if (event === 'SIGNED_IN') {
-          // Defer any additional data fetching to avoid potential deadlocks
+          // Defer navigation to avoid React state update issues
           setTimeout(() => {
             navigate('/admin');
           }, 0);
@@ -46,7 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // Get initial session
+    // Then get initial session
     const getInitialSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -64,7 +64,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     getInitialSession();
 
     return () => {
-      subscription?.unsubscribe();
+      if (subscription) {
+        subscription.unsubscribe();
+      }
     };
   }, [navigate]);
 
