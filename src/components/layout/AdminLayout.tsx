@@ -77,7 +77,7 @@ const AdminLayout = () => {
               <Button 
                 variant="ghost" 
                 className="w-full justify-start text-gray-600 hover:bg-gray-100" 
-                onClick={signOut}
+                onClick={() => signOut()}
               >
                 <LogOut className="h-5 w-5 mr-2" />
                 {sidebarOpen && "Sair"}

@@ -21,32 +21,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isLoading: true,
   });
   const navigate = useNavigate();
+  const [initialSessionChecked, setInitialSessionChecked] = useState(false);
 
   useEffect(() => {
-    // Set up the auth state listener first
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setAuthState({
-          session,
-          user: session?.user ?? null,
-          isLoading: false,
-        });
-        
-        // Handle auth events if needed
-        if (event === 'SIGNED_IN') {
-          // Defer navigation to avoid React state update issues
-          setTimeout(() => {
-            navigate('/admin');
-          }, 0);
-        } else if (event === 'SIGNED_OUT') {
-          setTimeout(() => {
-            navigate('/login');
-          }, 0);
-        }
-      }
-    );
-
-    // Then get initial session
+    // First get initial session to know our starting point
     const getInitialSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -55,13 +33,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           user: session?.user ?? null,
           isLoading: false,
         });
+        setInitialSessionChecked(true);
       } catch (error) {
         console.error("Error getting session:", error);
         setAuthState(prev => ({ ...prev, isLoading: false }));
+        setInitialSessionChecked(true);
       }
     };
 
     getInitialSession();
+
+    // Then set up the auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        const previousUser = authState.user;
+        const currentUser = session?.user ?? null;
+        
+        setAuthState({
+          session,
+          user: currentUser,
+          isLoading: false,
+        });
+        
+        // Only trigger navigation on specific auth events
+        if (event === 'SIGNED_IN' && !previousUser) {
+          // New sign in, navigate to admin
+          setTimeout(() => navigate('/admin'), 0);
+        } else if (event === 'SIGNED_OUT') {
+          // User signed out, navigate to login
+          setTimeout(() => navigate('/login'), 0);
+        }
+        // For other auth events or when just refreshing the session token, do nothing
+      }
+    );
 
     return () => {
       if (subscription) {
@@ -74,6 +78,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
+      
+      // Navigation will be handled by the onAuthStateChange listener
     } catch (error: any) {
       toast({
         title: "Erro ao entrar",
@@ -106,6 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
+      // Navigation will be handled by the onAuthStateChange listener
     } catch (error: any) {
       toast({
         title: "Erro ao sair",
@@ -121,6 +128,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signUp,
     signOut,
   };
+
+  // Show nothing until we've checked the initial session
+  if (!initialSessionChecked) {
+    return null;
+  }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

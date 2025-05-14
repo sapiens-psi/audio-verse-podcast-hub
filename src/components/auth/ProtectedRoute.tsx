@@ -19,9 +19,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   if (!user) {
+    // Só redireciona se realmente não houver usuário autenticado
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // Se tiver usuário autenticado, renderiza normalmente
   return <>{children}</>;
 };
 
