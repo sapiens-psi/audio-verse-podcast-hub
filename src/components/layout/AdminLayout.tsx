@@ -40,16 +40,16 @@ const AdminLayout = () => {
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-gray-50">
         <Sidebar 
-          className={`${sidebarOpen ? "w-64" : "w-14"} transition-all duration-300 ease-in-out`} 
+          className={`${sidebarOpen ? "w-72" : "w-16"} transition-all duration-300 ease-in-out`} 
           collapsible="icon"
         >
           <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
             {sidebarOpen && (
               <div className="flex items-center">
-                <div className="w-8 h-8 rounded-full bg-podcast flex items-center justify-center mr-2">
-                  <Home className="text-white h-4 w-4" />
+                <div className="w-10 h-10 rounded-full bg-podcast flex items-center justify-center mr-2">
+                  <Home className="text-white h-5 w-5" />
                 </div>
-                <span className="font-bold text-lg text-podcast">Admin</span>
+                <span className="font-bold text-xl text-podcast">Ampla</span>
               </div>
             )}
             <SidebarTrigger className="text-gray-500 hover:text-podcast transition-colors" onClick={() => setSidebarOpen(!sidebarOpen)} />
@@ -57,7 +57,7 @@ const AdminLayout = () => {
 
           <SidebarContent>
             <SidebarGroup>
-              <SidebarGroupLabel className="text-xs uppercase tracking-wider text-gray-500">Menu</SidebarGroupLabel>
+              <SidebarGroupLabel className="text-sm uppercase tracking-wider text-gray-500 font-medium">Menu</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   {sidebarMenuItems.map((item) => (
@@ -67,7 +67,7 @@ const AdminLayout = () => {
                           to={item.path} 
                           end={item.path === "/admin"}
                           className={({ isActive }) => 
-                            `flex items-center py-2 px-3 rounded-md transition-colors ${
+                            `flex items-center py-3 px-4 rounded-md transition-colors text-base ${
                               isActive 
                                 ? "bg-podcast/20 text-podcast font-medium" 
                                 : "text-gray-600 hover:bg-gray-100"
@@ -87,7 +87,7 @@ const AdminLayout = () => {
             <div className="mt-auto p-4 border-t border-sidebar-border">
               <Button 
                 variant="ghost" 
-                className="w-full justify-start text-gray-600 hover:bg-gray-100 hover:text-podcast transition-colors" 
+                className="w-full justify-start text-gray-600 hover:bg-gray-100 hover:text-podcast transition-colors text-base py-3" 
                 onClick={handleSignOut}
               >
                 <LogOut className={`h-5 w-5 ${sidebarOpen ? 'mr-3' : ''}`} />

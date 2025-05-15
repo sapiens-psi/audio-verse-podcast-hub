@@ -36,6 +36,38 @@ export type Database = {
         }
         Relationships: []
       }
+      episode_views: {
+        Row: {
+          episode_id: string
+          id: string
+          ip_address: string | null
+          user_id: string | null
+          viewed_at: string
+        }
+        Insert: {
+          episode_id: string
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+          viewed_at?: string
+        }
+        Update: {
+          episode_id?: string
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "episode_views_episode_id_fkey"
+            columns: ["episode_id"]
+            isOneToOne: false
+            referencedRelation: "episodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       episodes: {
         Row: {
           audio: string
