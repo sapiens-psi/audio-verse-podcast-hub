@@ -10,16 +10,14 @@ import { ptBR } from "date-fns/locale";
 const ViewsPage = () => {
   const [viewsData, setViewsData] = useState<EpisodeViewCount[]>([]);
   const [loading, setLoading] = useState(true);
-  const [localStorageViews, setLocalStorageViews] = useState<Record<string, number>>({});
   const [episodes, setEpisodes] = useState<{[key: string]: {title: string, published_at: string}}>({});
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       
-      // Verificamos primeiro se a tabela existe
       try {
-        // Primeiro busca todos os episódios para ter os títulos
+        // First fetch all episodes to get the titles
         const { data: episodesData, error: episodesError } = await supabase
           .from('episodes')
           .select('id, titulo, publicado_em');
@@ -37,47 +35,27 @@ const ViewsPage = () => {
           setEpisodes(episodesMap);
         }
 
-        // Tenta buscar as visualizações da tabela
-        const { data, error } = await supabase
-          .from('episode_views')
-          .select('episode_id, count')
-          .count();
+        // Load view data from localStorage
+        const viewsKey = 'podcast_episode_views';
+        const storedViews = localStorage.getItem(viewsKey);
+        const views = storedViews ? JSON.parse(storedViews) : {};
         
-        if (error) {
-          if (error.message.includes('does not exist')) {
-            console.log("Tabela de visualizações não existe, usando dados locais");
-            // Carrega os dados de localStorage
-            const viewsKey = 'podcast_episode_views';
-            const storedViews = localStorage.getItem(viewsKey);
-            const views = storedViews ? JSON.parse(storedViews) : {};
-            setLocalStorageViews(views);
-          } else {
-            console.error("Erro ao buscar visualizações:", error);
-          }
-        } else if (data) {
-          const episodeViews: {[key: string]: number} = {};
+        // Format the data for the chart
+        const formattedData = Object.keys(views).map(episodeId => {
+          const episodeInfo = episodes[episodeId] || {
+            title: `Episódio ${episodeId.slice(0, 8)}`, 
+            published_at: new Date().toISOString()
+          };
           
-          // Agrupa as visualizações por episódio
-          data.forEach(view => {
-            if (!episodeViews[view.episode_id]) {
-              episodeViews[view.episode_id] = 0;
-            }
-            episodeViews[view.episode_id]++;
-          });
-          
-          // Formata os dados para o gráfico
-          const formattedData = Object.keys(episodeViews).map(episodeId => {
-            const episodeInfo = episodes[episodeId] || {title: 'Episódio desconhecido', published_at: new Date().toISOString()};
-            return {
-              id: episodeId,
-              title: episodeInfo.title,
-              views: episodeViews[episodeId],
-              published_at: episodeInfo.published_at
-            };
-          });
-          
-          setViewsData(formattedData);
-        }
+          return {
+            id: episodeId,
+            title: episodeInfo.title,
+            views: views[episodeId],
+            published_at: episodeInfo.published_at
+          };
+        });
+        
+        setViewsData(formattedData);
       } catch (error) {
         console.error("Erro ao buscar dados:", error);
       } finally {
@@ -86,35 +64,14 @@ const ViewsPage = () => {
     };
     
     fetchData();
-  }, []);
+  }, [episodes]);
 
-  // Prepara os dados para o gráfico com base na fonte dos dados (API ou localStorage)
-  const prepareChartData = () => {
-    // Se temos dados da API, usamos eles
-    if (viewsData.length > 0) {
-      return viewsData
-        .sort((a, b) => b.views - a.views)
-        .slice(0, 10);
-    }
-    
-    // Caso contrário, usamos os dados do localStorage
-    return Object.keys(localStorageViews)
-      .map(episodeId => {
-        const episodeInfo = episodes[episodeId] || {title: `Episódio ${episodeId.slice(0, 8)}`, published_at: new Date().toISOString()};
-        return {
-          id: episodeId,
-          title: episodeInfo.title,
-          views: localStorageViews[episodeId],
-          published_at: episodeInfo.published_at
-        };
-      })
-      .sort((a, b) => b.views - a.views)
-      .slice(0, 10);
-  };
-
-  const chartData = prepareChartData();
+  // Prepare chart data
+  const chartData = viewsData
+    .sort((a, b) => b.views - a.views)
+    .slice(0, 10);
   
-  // Formata o nome para o gráfico (truncando se necessário)
+  // Format episode name for chart
   const formatEpisodeName = (name: string) => {
     return name.length > 20 ? `${name.substring(0, 20)}...` : name;
   };
@@ -209,6 +166,6 @@ const ViewsPage = () => {
       </Card>
     </div>
   );
-};
+}
 
 export default ViewsPage;

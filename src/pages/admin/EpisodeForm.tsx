@@ -23,7 +23,7 @@ const formSchema = z.object({
   capa: z.string().url("Forneça uma URL válida para a imagem de capa"),
   publicado_em: z.string().min(1, "A data de publicação é obrigatória"),
   categoria: z.string().min(1, "A categoria é obrigatória"),
-  category_id: z.string().uuid("Selecione uma categoria válida"),
+  categoria_id: z.string().uuid("Selecione uma categoria válida"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -44,7 +44,7 @@ const EpisodeForm = () => {
       capa: "",
       publicado_em: new Date().toISOString().split("T")[0],
       categoria: "",
-      category_id: "",
+      categoria_id: "",
     },
   });
 
@@ -95,10 +95,10 @@ const EpisodeForm = () => {
               titulo: data.titulo,
               descricao: data.descricao,
               audio: data.audio,
-              capa: data.capa,
+              capa: data.capa || "", // Handle null case
               publicado_em: formattedDate,
-              categoria: data.categoria,
-              category_id: data.category_id || "",
+              categoria: data.categoria || "", // Handle null case
+              categoria_id: data.categoria_id || "", // Handle null case
             });
           }
         } catch (error) {
@@ -141,7 +141,7 @@ const EpisodeForm = () => {
             capa: values.capa,
             publicado_em: values.publicado_em,
             categoria: values.categoria,
-            category_id: values.category_id,
+            categoria_id: values.categoria_id,
           })
           .eq("id", id);
           
@@ -153,20 +153,18 @@ const EpisodeForm = () => {
         });
       } else {
         // Create new episode
-        const newEpisode = {
-          titulo: values.titulo,
-          descricao: values.descricao,
-          audio: values.audio,
-          capa: values.capa,
-          publicado_em: values.publicado_em,
-          categoria: values.categoria,
-          category_id: values.category_id,
-          user_id: user.id
-        };
-        
         const { error } = await supabase
           .from("episodes")
-          .insert([newEpisode]);
+          .insert([{
+            titulo: values.titulo,
+            descricao: values.descricao,
+            audio: values.audio,
+            capa: values.capa,
+            publicado_em: values.publicado_em,
+            categoria: values.categoria,
+            categoria_id: values.categoria_id,
+            user_id: user.id
+          }]);
           
         if (error) throw error;
         
@@ -287,7 +285,7 @@ const EpisodeForm = () => {
             
             <FormField
               control={form.control}
-              name="category_id"
+              name="categoria_id"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Categoria</FormLabel>

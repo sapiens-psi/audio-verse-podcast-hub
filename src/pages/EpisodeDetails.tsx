@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getEpisodeById } from "@/lib/mockData";
@@ -97,7 +96,7 @@ const EpisodeDetails = () => {
           <h1 className="text-3xl font-bold mb-3 text-podcast-background">{episode.titulo}</h1>
           
           <div className="mb-8">
-            <AudioPlayer audioUrl={episode.audio} />
+            <AudioPlayer src={episode.audio} episodeId={episode.id} />
           </div>
 
           <div className="prose max-w-none">
