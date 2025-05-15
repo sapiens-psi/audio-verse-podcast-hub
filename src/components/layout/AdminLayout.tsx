@@ -13,7 +13,7 @@ import {
   SidebarProvider,
   SidebarTrigger
 } from "@/components/ui/sidebar";
-import { Home, LogOut, FolderPlus, List, BarChart2 } from "lucide-react";
+import { Home, LogOut, FolderPlus, List, BarChart2, Headphones } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -40,24 +40,31 @@ const AdminLayout = () => {
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-gray-50">
         <Sidebar 
-          className={`${sidebarOpen ? "w-72" : "w-16"} transition-all duration-300 ease-in-out`} 
+          className={`${sidebarOpen ? "w-72" : "w-20"} transition-all duration-300 ease-in-out shadow-md border-r border-gray-200`}
           collapsible="icon"
         >
           <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
             {sidebarOpen && (
               <div className="flex items-center">
-                <div className="w-10 h-10 rounded-full bg-podcast flex items-center justify-center mr-2">
-                  <Home className="text-white h-5 w-5" />
+                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-ampla-red to-ampla-orange flex items-center justify-center mr-3">
+                  <Headphones className="text-white h-5 w-5" />
                 </div>
-                <span className="font-bold text-xl text-podcast">Ampla</span>
+                <div className="flex flex-col">
+                  <span className="font-bold text-lg bg-clip-text text-transparent bg-gradient-to-r from-ampla-red to-ampla-orange">
+                    Ampla
+                  </span>
+                  <span className="text-xs text-gray-500 -mt-1">Podcast Admin</span>
+                </div>
               </div>
             )}
-            <SidebarTrigger className="text-gray-500 hover:text-podcast transition-colors" onClick={() => setSidebarOpen(!sidebarOpen)} />
+            <SidebarTrigger className="text-gray-500 hover:text-ampla-red transition-colors p-2 rounded-full hover:bg-gray-100" onClick={() => setSidebarOpen(!sidebarOpen)} />
           </div>
 
-          <SidebarContent>
+          <SidebarContent className="p-2">
             <SidebarGroup>
-              <SidebarGroupLabel className="text-sm uppercase tracking-wider text-gray-500 font-medium">Menu</SidebarGroupLabel>
+              <SidebarGroupLabel className={`text-xs uppercase tracking-wider text-gray-500 font-medium px-4 py-2 ${!sidebarOpen && 'sr-only'}`}>
+                Menu
+              </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   {sidebarMenuItems.map((item) => (
@@ -67,15 +74,15 @@ const AdminLayout = () => {
                           to={item.path} 
                           end={item.path === "/admin"}
                           className={({ isActive }) => 
-                            `flex items-center py-3 px-4 rounded-md transition-colors text-base ${
+                            `flex items-center py-3 px-4 rounded-lg transition-all duration-200 text-base ${
                               isActive 
-                                ? "bg-podcast/20 text-podcast font-medium" 
-                                : "text-gray-600 hover:bg-gray-100"
+                                ? "bg-gradient-to-r from-ampla-red/10 to-ampla-teal/5 text-ampla-red font-medium border-l-4 border-ampla-red" 
+                                : "text-gray-600 hover:bg-gray-100 hover:text-ampla-red"
                             }`
                           }
                         >
-                          <item.icon className={`h-5 w-5 ${sidebarOpen ? 'mr-3' : ''}`} />
-                          {sidebarOpen && item.label}
+                          <item.icon className={`h-5 w-5 flex-shrink-0 ${sidebarOpen ? 'mr-3' : ''}`} />
+                          {sidebarOpen && <span>{item.label}</span>}
                         </NavLink>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -87,19 +94,21 @@ const AdminLayout = () => {
             <div className="mt-auto p-4 border-t border-sidebar-border">
               <Button 
                 variant="ghost" 
-                className="w-full justify-start text-gray-600 hover:bg-gray-100 hover:text-podcast transition-colors text-base py-3" 
+                className={`w-full justify-start text-gray-600 hover:bg-gray-100 hover:text-ampla-red transition-colors text-base py-3 rounded-lg ${
+                  !sidebarOpen && 'justify-center p-2'
+                }`}
                 onClick={handleSignOut}
               >
-                <LogOut className={`h-5 w-5 ${sidebarOpen ? 'mr-3' : ''}`} />
+                <LogOut className={`h-5 w-5 flex-shrink-0 ${sidebarOpen ? 'mr-3' : ''}`} />
                 {sidebarOpen && "Sair"}
               </Button>
             </div>
           </SidebarContent>
         </Sidebar>
 
-        <div className="flex flex-col flex-1">
+        <div className="flex flex-col flex-1 overflow-hidden">
           <Navbar />
-          <div className="p-6">
+          <div className="p-6 overflow-auto h-[calc(100vh-64px)]">
             <Outlet />
           </div>
         </div>
