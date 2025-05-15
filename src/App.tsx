@@ -1,3 +1,4 @@
+
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import AdminLayout from '@/components/layout/AdminLayout';
@@ -11,6 +12,7 @@ import EpisodeForm from '@/pages/admin/EpisodeForm';
 import EpisodeList from '@/pages/admin/EpisodeList';
 import CategoryForm from '@/pages/admin/CategoryForm';
 import CategoryList from '@/pages/admin/CategoryList';
+import ViewsPage from '@/pages/admin/ViewsPage';
 import Login from '@/pages/auth/Login';
 import Register from '@/pages/auth/Register';
 import { Toaster } from '@/components/ui/toaster';
@@ -48,6 +50,7 @@ function App() {
             <Route path="episodes" element={<EpisodeList />} />
             <Route path="episodes/new" element={<EpisodeForm />} />
             <Route path="episodes/:id/edit" element={<EpisodeForm />} />
+            <Route path="views" element={<ViewsPage />} />
           </Route>
           
           <Route path="*" element={<NotFound />} />

@@ -1,159 +1,214 @@
 
-import React, { useState, useRef, useEffect } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2 } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
+import React, { useState, useRef, useEffect } from "react";
+import { Play, Pause, SkipBack, SkipForward, Volume1, Volume2, VolumeX } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useEpisodeViews } from "@/hooks/use-episode-views";
 
 interface AudioPlayerProps {
-  audioUrl: string;
+  src: string;
+  episodeId?: string;
+  className?: string;
 }
 
-const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl }) => {
-  const audioRef = useRef<HTMLAudioElement>(null);
+interface TimeFormat {
+  minutes: number;
+  seconds: number;
+}
+
+// Helper function to format time
+const formatTime = (time: number): TimeFormat => {
+  const minutes = Math.floor(time / 60);
+  const seconds = Math.floor(time % 60);
+  return { minutes, seconds };
+};
+
+const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, episodeId, className }) => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(0.7);
-
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const setAudioData = () => {
-      setDuration(audio.duration);
-    };
-
-    const setAudioTime = () => {
-      setCurrentTime(audio.currentTime);
-    };
-
-    // Add event listeners
-    audio.addEventListener('loadeddata', setAudioData);
-    audio.addEventListener('timeupdate', setAudioTime);
-
-    // Cleanup
-    return () => {
-      audio.removeEventListener('loadeddata', setAudioData);
-      audio.removeEventListener('timeupdate', setAudioTime);
-    };
-  }, [audioUrl]);
-
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume;
-    }
-  }, [volume]);
-
-  const handlePlayPause = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    if (isPlaying) {
-      audio.pause();
-      setIsPlaying(false);
-    } else {
-      audio.play().catch(error => {
-        console.error("Error playing audio:", error);
-      });
-      setIsPlaying(true);
-    }
-  };
-
-  const handleTimeChange = (values: number[]) => {
+  const [currentTime, setCurrentTime] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [prevVolume, setPrevVolume] = useState(1);
+  const [viewCounted, setViewCounted] = useState(false);
+  
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const { registerView } = useEpisodeViews();
+  
+  // Format times for display
+  const durationFormatted = formatTime(duration);
+  const currentTimeFormatted = formatTime(currentTime);
+  
+  // Handle playback toggle
+  const togglePlayPause = () => {
     const audio = audioRef.current;
     if (!audio) return;
     
-    const newTime = values[0];
+    if (isPlaying) {
+      audio.pause();
+    } else {
+      audio.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  // Update current time while playing
+  const handleTimeUpdate = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    
+    setCurrentTime(audio.currentTime);
+    
+    // Register view after 5 seconds of playback if it's a valid episode
+    if (episodeId && !viewCounted && audio.currentTime > 5) {
+      registerView(episodeId);
+      setViewCounted(true);
+    }
+  };
+
+  // Handle metadata load to get duration
+  const handleLoadedMetadata = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    
+    setDuration(audio.duration);
+  };
+
+  // Handle time change via slider
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    
+    const newTime = parseFloat(e.target.value);
     audio.currentTime = newTime;
     setCurrentTime(newTime);
   };
 
-  const handleVolumeChange = (values: number[]) => {
-    const newVolume = values[0];
+  // Handle volume change
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    
+    const newVolume = parseFloat(e.target.value);
+    audio.volume = newVolume;
     setVolume(newVolume);
-    if (audioRef.current) {
-      audioRef.current.volume = newVolume;
+  };
+
+  // Toggle mute
+  const toggleMute = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    
+    if (volume > 0) {
+      setPrevVolume(volume);
+      audio.volume = 0;
+      setVolume(0);
+    } else {
+      audio.volume = prevVolume;
+      setVolume(prevVolume);
     }
   };
 
+  // Skip forward 10 seconds
   const skipForward = () => {
-    if (!audioRef.current) return;
-    audioRef.current.currentTime = Math.min(audioRef.current.currentTime + 10, duration);
+    const audio = audioRef.current;
+    if (!audio) return;
+    
+    audio.currentTime = Math.min(audio.duration, audio.currentTime + 10);
   };
 
+  // Skip backward 10 seconds
   const skipBackward = () => {
-    if (!audioRef.current) return;
-    audioRef.current.currentTime = Math.max(audioRef.current.currentTime - 10, 0);
+    const audio = audioRef.current;
+    if (!audio) return;
+    
+    audio.currentTime = Math.max(0, audio.currentTime - 10);
   };
 
-  // Format time to display as MM:SS
-  const formatTime = (seconds: number) => {
-    if (isNaN(seconds)) return "00:00";
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  // Reset player when audio src changes
+  useEffect(() => {
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setViewCounted(false);
+  }, [src]);
+
+  // Render volume icon based on current volume
+  const renderVolumeIcon = () => {
+    if (volume === 0) return <VolumeX className="h-4 w-4" />;
+    if (volume < 0.5) return <Volume1 className="h-4 w-4" />;
+    return <Volume2 className="h-4 w-4" />;
   };
 
   return (
-    <div className="audio-player-container bg-white rounded-xl p-4 shadow-md border border-gray-100">
-      <audio ref={audioRef} src={audioUrl} preload="metadata" />
+    <div className={cn("audio-player-container p-4 bg-white rounded-lg shadow", className)}>
+      <audio
+        ref={audioRef}
+        src={src}
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata}
+        onEnded={() => setIsPlaying(false)}
+      />
       
-      <div className="flex flex-col">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-gray-500">{formatTime(currentTime)}</span>
-          <span className="text-sm text-gray-500">{formatTime(duration)}</span>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center space-x-2">
+          <button 
+            onClick={skipBackward}
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+          >
+            <SkipBack className="text-podcast h-4 w-4" />
+          </button>
+          
+          <button 
+            onClick={togglePlayPause}
+            className="p-2 bg-podcast text-white rounded-full hover:bg-podcast-dark transition-colors"
+          >
+            {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+          </button>
+          
+          <button 
+            onClick={skipForward}
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+          >
+            <SkipForward className="text-podcast h-4 w-4" />
+          </button>
         </div>
         
-        <Slider
-          defaultValue={[0]}
-          value={[currentTime]}
-          max={duration || 0}
-          step={0.1}
-          onValueChange={handleTimeChange}
-          className="mb-4"
-        />
-
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={skipBackward}
-              className="hover:text-podcast"
-            >
-              <SkipBack className="h-5 w-5" />
-            </Button>
-            
-            <Button 
-              variant="outline"
-              size="icon"
-              onClick={handlePlayPause} 
-              className="rounded-full h-12 w-12 flex items-center justify-center border-podcast text-podcast hover:bg-podcast hover:text-white transition-colors"
-            >
-              {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
-            </Button>
-            
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={skipForward}
-              className="hover:text-podcast"
-            >
-              <SkipForward className="h-5 w-5" />
-            </Button>
-          </div>
+        <div className="flex items-center space-x-2">
+          <button 
+            onClick={toggleMute}
+            className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+          >
+            {renderVolumeIcon()}
+          </button>
           
-          <div className="flex items-center w-32">
-            <Volume2 className="h-4 w-4 mr-2 text-gray-400" />
-            <Slider
-              defaultValue={[0.7]}
-              value={[volume]}
-              max={1}
-              step={0.01}
-              onValueChange={handleVolumeChange}
-            />
-          </div>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={volume}
+            onChange={handleVolumeChange}
+            className="w-20"
+          />
         </div>
+      </div>
+      
+      <div className="flex items-center space-x-3">
+        <span className="text-xs text-gray-500 w-12 text-right">
+          {currentTimeFormatted.minutes}:{currentTimeFormatted.seconds.toString().padStart(2, '0')}
+        </span>
+        
+        <input
+          type="range"
+          min="0"
+          max={duration || 0}
+          step="0.01"
+          value={currentTime}
+          onChange={handleSeek}
+          className="flex-grow"
+        />
+        
+        <span className="text-xs text-gray-500 w-12">
+          {durationFormatted.minutes}:{durationFormatted.seconds.toString().padStart(2, '0')}
+        </span>
       </div>
     </div>
   );

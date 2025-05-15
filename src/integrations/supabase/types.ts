@@ -39,32 +39,46 @@ export type Database = {
       episodes: {
         Row: {
           audio: string
-          created_at: string
+          categoria_id: string
+          created_at: string | null
           descricao: string
           id: string
           publicado_em: string
           titulo: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
           audio: string
-          created_at?: string
+          categoria_id: string
+          created_at?: string | null
           descricao: string
           id?: string
           publicado_em: string
           titulo: string
+          updated_at?: string | null
           user_id: string
         }
         Update: {
           audio?: string
-          created_at?: string
+          categoria_id?: string
+          created_at?: string | null
           descricao?: string
           id?: string
           publicado_em?: string
           titulo?: string
+          updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "episodes_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
