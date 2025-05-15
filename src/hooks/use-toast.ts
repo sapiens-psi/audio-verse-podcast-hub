@@ -189,11 +189,13 @@ export const ToastProvider: React.FC<{children: React.ReactNode}> = ({ children 
   }, [state]);
 
   return (
-    <ToastContext.Provider value={{
-      toasts: state.toasts,
-      toast,
-      dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId })
-    }}>
+    <ToastContext.Provider 
+      value={{
+        toasts: state.toasts,
+        toast,
+        dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId })
+      }}
+    >
       {children}
     </ToastContext.Provider>
   );

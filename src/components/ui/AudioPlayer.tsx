@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Play, Pause, SkipBack, SkipForward, Volume1, Volume2, VolumeX } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -16,7 +17,7 @@ interface TimeFormat {
 
 // Helper function to format time
 const formatTime = (time: number): TimeFormat => {
-  const minutes = Math.floor(time / 60;
+  const minutes = Math.floor(time / 60);
   const seconds = Math.floor(time % 60);
   return { minutes, seconds };
 };
