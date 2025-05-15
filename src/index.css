@@ -14,7 +14,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 293 93% 39%;
+    --primary: 348 80% 45%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -31,18 +31,18 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 293 93% 39%;
+    --ring: 348 80% 45%;
 
     --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 293 93% 39%;
+    --sidebar-primary: 348 80% 45%;
     --sidebar-primary-foreground: 0 0% 98%;
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 293 93% 39%;
+    --sidebar-ring: 348 80% 45%;
   }
 
   .dark {
@@ -55,7 +55,7 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 293 93% 39%;
+    --primary: 348 80% 45%;
     --primary-foreground: 222.2 47.4% 11.2%;
 
     --secondary: 217.2 32.6% 17.5%;
@@ -72,16 +72,16 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 293 93% 39%;
+    --ring: 348 80% 45%;
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 293 93% 39%;
+    --sidebar-primary: 348 80% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 293 93% 39%;
+    --sidebar-ring: 348 80% 45%;
   }
 }
 
@@ -117,7 +117,7 @@
   width: 15px;
   height: 15px;
   border-radius: 50%;
-  background: theme('colors.podcast.DEFAULT');
+  background: #FFC325;
   cursor: pointer;
 }
 
@@ -125,6 +125,40 @@
   width: 15px;
   height: 15px;
   border-radius: 50%;
-  background: theme('colors.podcast.DEFAULT');
+  background: #FFC325;
   cursor: pointer;
+}
+
+/* Ampla Podcast brand colors */
+:root {
+  --ampla-red: #D1173D;
+  --ampla-orange: #F78C3B;
+  --ampla-yellow: #FFC325;
+  --ampla-teal: #00A9B0;
+}
+
+/* Ampla gradient animations for loading states */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.ampla-gradient-text {
+  @apply bg-clip-text text-transparent;
+  background-image: linear-gradient(135deg, var(--ampla-red), var(--ampla-orange), var(--ampla-yellow), var(--ampla-teal));
+  background-size: 300% 100%;
+  animation: gradient-shift 4s ease infinite;
+}
+
+.ampla-gradient-bg {
+  background-image: linear-gradient(135deg, var(--ampla-red), var(--ampla-orange), var(--ampla-yellow), var(--ampla-teal));
+  background-size: 300% 100%;
+  animation: gradient-shift 4s ease infinite;
 }

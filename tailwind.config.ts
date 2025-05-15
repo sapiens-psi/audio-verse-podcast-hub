@@ -53,10 +53,11 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
-				podcast: {
-					DEFAULT: '#9E07C0',
-					dark: '#7B05A0',
-					light: '#F4D2FF',
+				ampla: {
+					red: '#D1173D',
+					orange: '#F78C3B',
+					yellow: '#FFC325',
+					teal: '#00A9B0',
 					foreground: '#FFFFFF',
 					background: '#1A1F2C'
 				},
@@ -96,12 +97,18 @@ export default {
                 'pulse-light': {
                     '0%, 100%': { opacity: '1' },
                     '50%': { opacity: '0.5' }
-                }
+                },
+                'wave': {
+                    '0%': { transform: 'scaleY(1)' },
+                    '50%': { transform: 'scaleY(0.5)' },
+                    '100%': { transform: 'scaleY(1)' }
+                },
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-                'pulse-light': 'pulse-light 2s ease-in-out infinite'
+                'pulse-light': 'pulse-light 2s ease-in-out infinite',
+                'wave': 'wave 1.2s ease-in-out infinite',
 			}
 		}
 	},

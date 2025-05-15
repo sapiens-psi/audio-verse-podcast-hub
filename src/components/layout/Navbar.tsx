@@ -1,7 +1,7 @@
 
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Home, Search, LogIn, User, Menu } from "lucide-react";
+import { LogIn, User, Menu } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
@@ -13,14 +13,18 @@ const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <nav className="w-full py-3 px-4 md:px-6 border-b flex items-center justify-between bg-white shadow-sm">
+    <nav className="w-full py-2 px-4 md:px-6 border-b flex items-center justify-between bg-gradient-to-r from-white to-[#FFC325]/5 shadow-sm">
       <div className="flex items-center space-x-6">
         <Link to="/" className="flex items-center group">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-podcast to-podcast-dark flex items-center justify-center mr-2 shadow-md transition-transform group-hover:scale-105 duration-200">
-            <Home className="text-white h-5 w-5" />
+          <div className="w-10 h-10 mr-2 transition-transform group-hover:scale-105 duration-200">
+            <img 
+              src="/lovable-uploads/b80fbf60-7df2-4524-8c97-60590217b190.png" 
+              alt="Ampla Podcast Logo" 
+              className="w-10 h-10 object-contain"
+            />
           </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-podcast-background to-podcast bg-clip-text text-transparent">
-            PodcastApp
+          <span className="text-xl font-bold bg-gradient-to-r from-[#D1173D] via-[#F78C3B] to-[#00A9B0] bg-clip-text text-transparent">
+            Ampla Podcast
           </span>
         </Link>
         
@@ -28,16 +32,16 @@ const Navbar = () => {
           <div className="hidden md:flex space-x-2">
             <Link 
               to="/" 
-              className={`px-4 py-2 rounded-md text-gray-600 hover:text-podcast hover:bg-podcast/10 transition-all ${
-                location.pathname === '/' ? 'bg-podcast/10 text-podcast font-medium' : ''
+              className={`px-4 py-2 rounded-md text-gray-600 hover:text-[#D1173D] hover:bg-[#D1173D]/10 transition-all ${
+                location.pathname === '/' ? 'bg-[#D1173D]/10 text-[#D1173D] font-medium' : ''
               }`}
             >
               Início
             </Link>
             <Link 
               to="/search" 
-              className={`px-4 py-2 rounded-md text-gray-600 hover:text-podcast hover:bg-podcast/10 transition-all ${
-                location.pathname === '/search' ? 'bg-podcast/10 text-podcast font-medium' : ''
+              className={`px-4 py-2 rounded-md text-gray-600 hover:text-[#00A9B0] hover:bg-[#00A9B0]/10 transition-all ${
+                location.pathname === '/search' ? 'bg-[#00A9B0]/10 text-[#00A9B0] font-medium' : ''
               }`}
             >
               Buscar
@@ -49,12 +53,12 @@ const Navbar = () => {
       <div className="hidden md:flex items-center space-x-3">
         {user ? (
           <div className="flex items-center gap-3">
-            <Badge variant="outline" className="bg-podcast/5 border-podcast/20 text-podcast">
+            <Badge variant="outline" className="bg-[#FFC325]/10 border-[#FFC325]/30 text-[#F78C3B]">
               {user.email?.split('@')[0]}
             </Badge>
             <Button 
               variant="outline" 
-              className="border-podcast/30 hover:border-podcast hover:bg-podcast/10 text-podcast-background hover:text-podcast shadow-sm transition-all"
+              className="border-[#00A9B0]/30 hover:border-[#00A9B0] hover:bg-[#00A9B0]/10 text-[#00A9B0] hover:text-[#00A9B0] shadow-sm transition-all"
               asChild
             >
               <Link to={isAdminSection ? "/" : "/admin"}>
@@ -65,7 +69,7 @@ const Navbar = () => {
         ) : (
           <Button 
             variant="default" 
-            className="bg-gradient-to-r from-podcast to-podcast-dark hover:from-podcast-dark hover:to-podcast shadow-md hover:shadow-lg transition-all"
+            className="bg-gradient-to-r from-[#D1173D] to-[#F78C3B] hover:from-[#F78C3B] hover:to-[#D1173D] shadow-md hover:shadow-lg transition-all"
             asChild
           >
             <Link to="/login" className="flex items-center">
@@ -92,8 +96,8 @@ const Navbar = () => {
               <>
                 <Link 
                   to="/" 
-                  className={`block px-4 py-2 text-gray-600 hover:text-podcast hover:bg-podcast/10 transition-all ${
-                    location.pathname === '/' ? 'bg-podcast/10 text-podcast font-medium' : ''
+                  className={`block px-4 py-2 text-gray-600 hover:text-[#D1173D] hover:bg-[#D1173D]/10 transition-all ${
+                    location.pathname === '/' ? 'bg-[#D1173D]/10 text-[#D1173D] font-medium' : ''
                   }`}
                   onClick={() => setMenuOpen(false)}
                 >
@@ -101,8 +105,8 @@ const Navbar = () => {
                 </Link>
                 <Link 
                   to="/search" 
-                  className={`block px-4 py-2 text-gray-600 hover:text-podcast hover:bg-podcast/10 transition-all ${
-                    location.pathname === '/search' ? 'bg-podcast/10 text-podcast font-medium' : ''
+                  className={`block px-4 py-2 text-gray-600 hover:text-[#00A9B0] hover:bg-[#00A9B0]/10 transition-all ${
+                    location.pathname === '/search' ? 'bg-[#00A9B0]/10 text-[#00A9B0] font-medium' : ''
                   }`}
                   onClick={() => setMenuOpen(false)}
                 >
@@ -114,7 +118,7 @@ const Navbar = () => {
             {user ? (
               <Link 
                 to={isAdminSection ? "/" : "/admin"} 
-                className="block px-4 py-2 text-gray-600 hover:text-podcast hover:bg-podcast/10 transition-all"
+                className="block px-4 py-2 text-gray-600 hover:text-[#00A9B0] hover:bg-[#00A9B0]/10 transition-all"
                 onClick={() => setMenuOpen(false)}
               >
                 {isAdminSection ? "Ver Site" : "Área Administrativa"}
@@ -122,7 +126,7 @@ const Navbar = () => {
             ) : (
               <Link 
                 to="/login" 
-                className="block px-4 py-2 text-gray-600 hover:text-podcast hover:bg-podcast/10 transition-all"
+                className="block px-4 py-2 text-gray-600 hover:text-[#D1173D] hover:bg-[#D1173D]/10 transition-all"
                 onClick={() => setMenuOpen(false)}
               >
                 Entrar
