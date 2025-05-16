@@ -196,8 +196,11 @@ const ViewsPage = () => {
                       ))}
                     </Pie>
                     <Tooltip 
-                      formatter={(value, name, props) => [value, 'Plays']}
-                      labelFormatter={(value) => props.payload.title}
+                      formatter={(value) => [value, 'Plays']}
+                      labelFormatter={(index) => {
+                        const entry = playCountData[index as number];
+                        return entry ? entry.title : '';
+                      }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -237,8 +240,11 @@ const ViewsPage = () => {
                       ))}
                     </Pie>
                     <Tooltip 
-                      formatter={(value, name, props) => [formatMinutes(value as number), 'Tempo']}
-                      labelFormatter={(value) => props.payload.title}
+                      formatter={(value) => [formatMinutes(value as number), 'Tempo']}
+                      labelFormatter={(index) => {
+                        const entry = minutesPlayedData[index as number];
+                        return entry ? entry.title : '';
+                      }}
                     />
                   </PieChart>
                 </ResponsiveContainer>

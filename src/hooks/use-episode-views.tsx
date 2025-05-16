@@ -63,7 +63,7 @@ export function useEpisodeViews() {
       // Buscar se já existe uma visualização para esse episódio hoje
       const { data: existingViews } = await supabase
         .from('episode_views')
-        .select('id')
+        .select('id, play_count, minutes_played')
         .eq('episode_id', episodeId)
         .gte('viewed_at', new Date(new Date().setHours(0, 0, 0, 0)).toISOString())
         .lte('viewed_at', new Date(new Date().setHours(23, 59, 59, 999)).toISOString())
@@ -71,12 +71,16 @@ export function useEpisodeViews() {
         .limit(1);
       
       if (existingViews && existingViews.length > 0) {
+        // Calculando os novos valores para atualizar
+        const currentPlayCount = existingViews[0].play_count || 0;
+        const currentMinutesPlayed = existingViews[0].minutes_played || 0;
+        
         // Atualizar contagem existente
         const { error } = await supabase
           .from('episode_views')
           .update({ 
-            play_count: supabase.rpc('increment', { inc: 1 }),
-            minutes_played: supabase.rpc('increment_float', { inc: minutesPlayed })
+            play_count: currentPlayCount + 1,
+            minutes_played: currentMinutesPlayed + minutesPlayed
           })
           .eq('id', existingViews[0].id);
           
