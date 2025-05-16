@@ -8,7 +8,7 @@ import {
 import { EpisodeViewCount } from "@/types/views";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Loader2, Play, Clock } from "lucide-react";
+import { Loader2, Eye, Clock } from "lucide-react";
 import { useEpisodeViews } from "@/hooks/use-episode-views";
 import { useToast } from "@/hooks/use-toast";
 import { formatMinutes } from "@/components/audio/utils";
@@ -41,11 +41,6 @@ const ViewsPage = () => {
   const viewsChartData = viewsData
     .sort((a, b) => b.views - a.views)
     .slice(0, 10);
-  
-  // Prepare chart data for play counts
-  const playCountData = viewsData
-    .sort((a, b) => (b.play_count || 0) - (a.play_count || 0))
-    .slice(0, 5);
 
   // Prepare chart data for minutes played
   const minutesPlayedData = viewsData
@@ -79,12 +74,12 @@ const ViewsPage = () => {
       </div>
 
       {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="shadow-md">
           <CardHeader className="bg-gradient-to-r from-podcast/5 to-podcast/10 border-b">
             <CardTitle className="text-gray-800 flex items-center">
               <span className="w-8 h-8 rounded-full bg-podcast/10 flex items-center justify-center mr-2">
-                <Play className="h-4 w-4 text-podcast" />
+                <Eye className="h-4 w-4 text-podcast" />
               </span>
               Total de Visualizações
             </CardTitle>
@@ -92,22 +87,6 @@ const ViewsPage = () => {
           <CardContent className="pt-6">
             <div className="text-3xl font-bold text-podcast">
               {viewsData.reduce((sum, item) => sum + item.views, 0)}
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="shadow-md">
-          <CardHeader className="bg-gradient-to-r from-podcast/5 to-podcast/10 border-b">
-            <CardTitle className="text-gray-800 flex items-center">
-              <span className="w-8 h-8 rounded-full bg-podcast/10 flex items-center justify-center mr-2">
-                <Play className="h-4 w-4 text-podcast" />
-              </span>
-              Total de Plays
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <div className="text-3xl font-bold text-podcast">
-              {viewsData.reduce((sum, item) => sum + (item.play_count || 0), 0)}
             </div>
           </CardContent>
         </Card>
@@ -169,94 +148,49 @@ const ViewsPage = () => {
         </CardContent>
       </Card>
 
-      {/* Play Count and Minutes Played Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Play Count Chart */}
-        <Card className="shadow-md">
-          <CardHeader className="bg-gradient-to-r from-podcast/5 to-podcast/10 border-b">
-            <CardTitle className="text-gray-800">Top 5 Episódios por Plays</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <div className="h-80">
-              {playCountData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={playCountData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ title, play_count }) => `${formatEpisodeName(title || '')}: ${play_count}`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="play_count"
-                    >
-                      {playCountData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      formatter={(value) => [value, 'Plays']}
-                      labelFormatter={(index) => {
-                        const entry = playCountData[index as number];
-                        return entry ? entry.title : '';
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <p className="text-gray-500">Nenhum dado de plays disponível</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Minutes Played Chart */}
-        <Card className="shadow-md">
-          <CardHeader className="bg-gradient-to-r from-podcast/5 to-podcast/10 border-b">
-            <CardTitle className="text-gray-800">Top 5 Episódios por Tempo Reproduzido</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <div className="h-80">
-              {minutesPlayedData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={minutesPlayedData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ title, minutes_played }) => 
-                        `${formatEpisodeName(title || '')}: ${formatMinutes(minutes_played || 0)}`
-                      }
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="minutes_played"
-                    >
-                      {minutesPlayedData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      formatter={(value) => [formatMinutes(value as number), 'Tempo']}
-                      labelFormatter={(index) => {
-                        const entry = minutesPlayedData[index as number];
-                        return entry ? entry.title : '';
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <p className="text-gray-500">Nenhum dado de tempo reproduzido disponível</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Minutes Played Chart */}
+      <Card className="shadow-md">
+        <CardHeader className="bg-gradient-to-r from-podcast/5 to-podcast/10 border-b">
+          <CardTitle className="text-gray-800">Top 5 Episódios por Tempo Reproduzido</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <div className="h-80">
+            {minutesPlayedData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={minutesPlayedData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ title, minutes_played }) => 
+                      `${formatEpisodeName(title || '')}: ${formatMinutes(minutes_played || 0)}`
+                    }
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="minutes_played"
+                  >
+                    {minutesPlayedData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={(value) => [formatMinutes(value as number), 'Tempo']}
+                    labelFormatter={(index) => {
+                      const entry = minutesPlayedData[index as number];
+                      return entry ? entry.title : '';
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-gray-500">Nenhum dado de tempo reproduzido disponível</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Detailed Table */}
       <Card className="shadow-md">
@@ -271,7 +205,6 @@ const ViewsPage = () => {
                   <TableHead>Episódio</TableHead>
                   <TableHead>Data de Publicação</TableHead>
                   <TableHead>Visualizações</TableHead>
-                  <TableHead>Plays</TableHead>
                   <TableHead>Tempo Reproduzido</TableHead>
                 </TableRow>
               </TableHeader>
@@ -289,16 +222,13 @@ const ViewsPage = () => {
                         <span className="font-medium text-podcast">{item.views}</span>
                       </TableCell>
                       <TableCell>
-                        <span className="font-medium text-podcast">{item.play_count || 0}</span>
-                      </TableCell>
-                      <TableCell>
                         <span className="font-medium text-podcast">{formatMinutes(item.minutes_played || 0)}</span>
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center">
+                    <TableCell colSpan={4} className="text-center">
                       Nenhum dado de visualização disponível
                     </TableCell>
                   </TableRow>

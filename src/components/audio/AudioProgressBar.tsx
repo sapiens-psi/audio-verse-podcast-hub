@@ -28,15 +28,27 @@ const AudioProgressBar: React.FC<AudioProgressBarProps> = ({
     if (episodeId && currentTime > 0) {
       // Track playback every 30 seconds
       if (!playTimerRef.current) {
+        console.log("Iniciando monitoramento de reprodução para episódio:", episodeId);
         // Store starting time when playback begins
         if (playStartTimeRef.current === null) {
           playStartTimeRef.current = currentTime;
+          console.log("Tempo inicial registrado:", playStartTimeRef.current);
         }
         
         playTimerRef.current = setInterval(() => {
           if (playStartTimeRef.current !== null && currentTime > playStartTimeRef.current) {
+            console.log(`Registrando tempo de reprodução: ${playStartTimeRef.current} até ${currentTime}`);
             // Register the play segment
-            registerPlayback(episodeId, playStartTimeRef.current, currentTime).catch(console.error);
+            registerPlayback(episodeId, playStartTimeRef.current, currentTime)
+              .then(result => {
+                if (result.success) {
+                  console.log("Tempo de reprodução registrado com sucesso");
+                } else {
+                  console.error("Erro ao registrar tempo de reprodução:", result.error);
+                }
+              })
+              .catch(error => console.error("Erro inesperado ao registrar tempo:", error));
+            
             // Update start time to current time
             playStartTimeRef.current = currentTime;
           }
@@ -55,7 +67,9 @@ const AudioProgressBar: React.FC<AudioProgressBarProps> = ({
         
         // Register final segment when unmounting if we were playing
         if (episodeId && playStartTimeRef.current !== null && lastTimeRef.current > playStartTimeRef.current) {
-          registerPlayback(episodeId, playStartTimeRef.current, lastTimeRef.current).catch(console.error);
+          console.log(`Registrando tempo final de reprodução: ${playStartTimeRef.current} até ${lastTimeRef.current}`);
+          registerPlayback(episodeId, playStartTimeRef.current, lastTimeRef.current)
+            .catch(error => console.error("Erro ao registrar tempo final:", error));
         }
       }
     };

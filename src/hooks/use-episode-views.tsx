@@ -13,14 +13,16 @@ export function useEpisodeViews() {
   const registerView = async (episodeId: string) => {
     try {
       setIsLoading(true);
+      console.log("Registrando visualização para episódio:", episodeId);
       
       // Tenta registrar na tabela episode_views
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from('episode_views')
         .insert({ 
           episode_id: episodeId,
           viewed_at: new Date().toISOString(),
-        });
+        })
+        .select();
       
       if (error) {
         console.error("Erro ao registrar visualização no banco:", error);
@@ -39,6 +41,7 @@ export function useEpisodeViews() {
         return { success: true, localStorageFallback: true };
       }
       
+      console.log("Visualização registrada com sucesso:", data);
       return { success: true };
     } catch (error: any) {
       console.error("Erro ao registrar visualização:", error);
@@ -53,17 +56,18 @@ export function useEpisodeViews() {
     }
   };
 
-  // Registrar play count e minutos reproduzidos
+  // Registrar minutos reproduzidos
   const registerPlayback = async (episodeId: string, startTime: number, endTime: number) => {
     try {
       setIsLoading(true);
       
       const minutesPlayed = calculateMinutesPlayed(startTime, endTime);
+      console.log(`Registrando ${minutesPlayed} minutos de reprodução para episódio ${episodeId}`);
       
       // Buscar se já existe uma visualização para esse episódio hoje
       const { data: existingViews } = await supabase
         .from('episode_views')
-        .select('id, play_count, minutes_played')
+        .select('id, minutes_played')
         .eq('episode_id', episodeId)
         .gte('viewed_at', new Date(new Date().setHours(0, 0, 0, 0)).toISOString())
         .lte('viewed_at', new Date(new Date().setHours(23, 59, 59, 999)).toISOString())
@@ -72,42 +76,44 @@ export function useEpisodeViews() {
       
       if (existingViews && existingViews.length > 0) {
         // Calculando os novos valores para atualizar
-        const currentPlayCount = existingViews[0].play_count || 0;
         const currentMinutesPlayed = existingViews[0].minutes_played || 0;
+        const newMinutesPlayed = currentMinutesPlayed + minutesPlayed;
         
-        // Atualizar contagem existente
+        console.log(`Atualizando visualização existente: ${existingViews[0].id}, minutos atuais: ${currentMinutesPlayed}, novos minutos: ${newMinutesPlayed}`);
+        
+        // Atualizar minutos reproduzidos
         const { error } = await supabase
           .from('episode_views')
           .update({ 
-            play_count: currentPlayCount + 1,
-            minutes_played: currentMinutesPlayed + minutesPlayed
+            minutes_played: newMinutesPlayed
           })
           .eq('id', existingViews[0].id);
           
         if (error) {
-          console.error("Erro ao atualizar play count:", error);
+          console.error("Erro ao atualizar minutos reproduzidos:", error);
           return { success: false, error };
         }
       } else {
-        // Criar nova contagem
+        // Criar nova visualização com minutos reproduzidos
+        console.log("Criando nova visualização com minutos reproduzidos:", minutesPlayed);
         const { error } = await supabase
           .from('episode_views')
           .insert({ 
             episode_id: episodeId,
             viewed_at: new Date().toISOString(),
-            play_count: 1,
             minutes_played: minutesPlayed
           });
           
         if (error) {
-          console.error("Erro ao registrar play count:", error);
+          console.error("Erro ao registrar minutos reproduzidos:", error);
           return { success: false, error };
         }
       }
       
+      console.log("Minutos reproduzidos registrados com sucesso");
       return { success: true };
     } catch (error: any) {
-      console.error("Erro ao registrar play count:", error);
+      console.error("Erro ao registrar minutos reproduzidos:", error);
       return { success: false, error };
     } finally {
       setIsLoading(false);
@@ -118,6 +124,7 @@ export function useEpisodeViews() {
   const getViewsByEpisode = async (): Promise<EpisodeViewCount[]> => {
     setIsLoading(true);
     try {
+      console.log("Buscando estatísticas de episódios");
       // Usar a função de agregação para obter estatísticas
       const { data: statistics, error } = await supabase
         .rpc('get_episode_statistics');
@@ -127,12 +134,13 @@ export function useEpisodeViews() {
         throw error;
       }
       
+      console.log("Estatísticas obtidas:", statistics);
+      
       // Formatar para o tipo EpisodeViewCount
       const formattedData = statistics.map((item: any) => ({
         id: item.episode_id,
         title: item.title,
         views: parseInt(item.total_views || '0'),
-        play_count: parseInt(item.total_play_count || '0'),
         minutes_played: parseFloat(item.total_minutes_played || '0'),
         published_at: item.published_at
       }));
