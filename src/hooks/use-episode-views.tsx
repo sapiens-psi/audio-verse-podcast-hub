@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { EpisodeViewCount } from "@/types/views";
+import { calculateMinutesPlayed } from "@/components/audio/utils";
 
 export function useEpisodeViews() {
   const [isLoading, setIsLoading] = useState(false);
@@ -52,78 +53,84 @@ export function useEpisodeViews() {
     }
   };
 
+  // Registrar play count e minutos reproduzidos
+  const registerPlayback = async (episodeId: string, startTime: number, endTime: number) => {
+    try {
+      setIsLoading(true);
+      
+      const minutesPlayed = calculateMinutesPlayed(startTime, endTime);
+      
+      // Buscar se já existe uma visualização para esse episódio hoje
+      const { data: existingViews } = await supabase
+        .from('episode_views')
+        .select('id')
+        .eq('episode_id', episodeId)
+        .gte('viewed_at', new Date(new Date().setHours(0, 0, 0, 0)).toISOString())
+        .lte('viewed_at', new Date(new Date().setHours(23, 59, 59, 999)).toISOString())
+        .order('viewed_at', { ascending: false })
+        .limit(1);
+      
+      if (existingViews && existingViews.length > 0) {
+        // Atualizar contagem existente
+        const { error } = await supabase
+          .from('episode_views')
+          .update({ 
+            play_count: supabase.rpc('increment', { inc: 1 }),
+            minutes_played: supabase.rpc('increment_float', { inc: minutesPlayed })
+          })
+          .eq('id', existingViews[0].id);
+          
+        if (error) {
+          console.error("Erro ao atualizar play count:", error);
+          return { success: false, error };
+        }
+      } else {
+        // Criar nova contagem
+        const { error } = await supabase
+          .from('episode_views')
+          .insert({ 
+            episode_id: episodeId,
+            viewed_at: new Date().toISOString(),
+            play_count: 1,
+            minutes_played: minutesPlayed
+          });
+          
+        if (error) {
+          console.error("Erro ao registrar play count:", error);
+          return { success: false, error };
+        }
+      }
+      
+      return { success: true };
+    } catch (error: any) {
+      console.error("Erro ao registrar play count:", error);
+      return { success: false, error };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Obter visualizações por episódio
   const getViewsByEpisode = async (): Promise<EpisodeViewCount[]> => {
     setIsLoading(true);
     try {
-      // Buscar visualizações do banco de dados agrupadas por episódio
-      const { data: dbViews, error } = await supabase
-        .from('episode_views')
-        .select('episode_id, episodes(id, titulo, publicado_em)')
-        .order('episode_id');
+      // Usar a função de agregação para obter estatísticas
+      const { data: statistics, error } = await supabase
+        .rpc('get_episode_statistics');
 
       if (error) {
-        console.error("Erro ao buscar visualizações:", error);
+        console.error("Erro ao buscar estatísticas:", error);
         throw error;
       }
-
-      // Processar dados para contar visualizações por episódio
-      const countMap: Record<string, {count: number; title: string; published_at: string}> = {};
-      
-      if (dbViews) {
-        dbViews.forEach((view: any) => {
-          const episodeId = view.episode_id;
-          if (!countMap[episodeId]) {
-            countMap[episodeId] = {
-              count: 0,
-              title: view.episodes?.titulo || `Episódio ${episodeId.slice(0, 8)}`,
-              published_at: view.episodes?.publicado_em || new Date().toISOString()
-            };
-          }
-          countMap[episodeId].count += 1;
-        });
-      }
-      
-      // Também carregar visualizações do localStorage como fallback
-      const viewsKey = 'podcast_episode_views';
-      const storedViews = localStorage.getItem(viewsKey);
-      const localViews = storedViews ? JSON.parse(storedViews) : {};
-      
-      // Combinar dados do banco com dados do localStorage
-      const { data: episodes } = await supabase
-        .from('episodes')
-        .select('id, titulo, publicado_em');
-      
-      const episodesMap: {[key: string]: {title: string, published_at: string}} = {};
-      if (episodes) {
-        episodes.forEach((ep: any) => {
-          episodesMap[ep.id] = {
-            title: ep.titulo,
-            published_at: ep.publicado_em
-          };
-        });
-      }
-      
-      // Adicionar visualizações do localStorage que não estejam no banco
-      Object.keys(localViews).forEach(episodeId => {
-        if (!countMap[episodeId] && episodesMap[episodeId]) {
-          countMap[episodeId] = {
-            count: localViews[episodeId],
-            title: episodesMap[episodeId].title || `Episódio ${episodeId.slice(0, 8)}`,
-            published_at: episodesMap[episodeId].published_at || new Date().toISOString()
-          };
-        } else if (countMap[episodeId]) {
-          // Somar visualizações do localStorage às do banco
-          countMap[episodeId].count += localViews[episodeId] || 0;
-        }
-      });
       
       // Formatar para o tipo EpisodeViewCount
-      const formattedData = Object.keys(countMap).map(id => ({
-        id,
-        title: countMap[id].title,
-        views: countMap[id].count,
-        published_at: countMap[id].published_at
+      const formattedData = statistics.map((item: any) => ({
+        id: item.episode_id,
+        title: item.title,
+        views: parseInt(item.total_views || '0'),
+        play_count: parseInt(item.total_play_count || '0'),
+        minutes_played: parseFloat(item.total_minutes_played || '0'),
+        published_at: item.published_at
       }));
       
       return formattedData;
@@ -137,6 +144,7 @@ export function useEpisodeViews() {
 
   return {
     registerView,
+    registerPlayback,
     getViewsByEpisode,
     isLoading
   };

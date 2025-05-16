@@ -1,13 +1,18 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  PieChart, Pie, Cell
+} from "recharts";
 import { EpisodeViewCount } from "@/types/views";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Loader2 } from "lucide-react";
+import { Loader2, Play, Clock } from "lucide-react";
 import { useEpisodeViews } from "@/hooks/use-episode-views";
 import { useToast } from "@/hooks/use-toast";
+import { formatMinutes } from "@/components/audio/utils";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const ViewsPage = () => {
   const [viewsData, setViewsData] = useState<EpisodeViewCount[]>([]);
@@ -32,15 +37,31 @@ const ViewsPage = () => {
     fetchData();
   }, []);
 
-  // Prepare chart data
-  const chartData = viewsData
+  // Prepare chart data for views
+  const viewsChartData = viewsData
     .sort((a, b) => b.views - a.views)
     .slice(0, 10);
+  
+  // Prepare chart data for play counts
+  const playCountData = viewsData
+    .sort((a, b) => (b.play_count || 0) - (a.play_count || 0))
+    .slice(0, 5);
+
+  // Prepare chart data for minutes played
+  const minutesPlayedData = viewsData
+    .sort((a, b) => (b.minutes_played || 0) - (a.minutes_played || 0))
+    .slice(0, 5);
+
+  // Calculate total minutes played
+  const totalMinutesPlayed = viewsData.reduce((total, item) => total + (item.minutes_played || 0), 0);
   
   // Format episode name for chart
   const formatEpisodeName = (name: string) => {
     return name.length > 20 ? `${name.substring(0, 20)}...` : name;
   };
+
+  // Color configuration for the charts
+  const COLORS = ['#9E07C0', '#D1173D', '#FFC325', '#00A9B0', '#6b7280'];
 
   if (isLoading) {
     return (
@@ -54,19 +75,71 @@ const ViewsPage = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-800">Visualizações de Episódios</h1>
+        <h1 className="text-3xl font-bold text-gray-800">Estatísticas de Episódios</h1>
       </div>
 
+      {/* Overview Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="shadow-md">
+          <CardHeader className="bg-gradient-to-r from-podcast/5 to-podcast/10 border-b">
+            <CardTitle className="text-gray-800 flex items-center">
+              <span className="w-8 h-8 rounded-full bg-podcast/10 flex items-center justify-center mr-2">
+                <Play className="h-4 w-4 text-podcast" />
+              </span>
+              Total de Visualizações
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="text-3xl font-bold text-podcast">
+              {viewsData.reduce((sum, item) => sum + item.views, 0)}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="shadow-md">
+          <CardHeader className="bg-gradient-to-r from-podcast/5 to-podcast/10 border-b">
+            <CardTitle className="text-gray-800 flex items-center">
+              <span className="w-8 h-8 rounded-full bg-podcast/10 flex items-center justify-center mr-2">
+                <Play className="h-4 w-4 text-podcast" />
+              </span>
+              Total de Plays
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="text-3xl font-bold text-podcast">
+              {viewsData.reduce((sum, item) => sum + (item.play_count || 0), 0)}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="shadow-md">
+          <CardHeader className="bg-gradient-to-r from-podcast/5 to-podcast/10 border-b">
+            <CardTitle className="text-gray-800 flex items-center">
+              <span className="w-8 h-8 rounded-full bg-podcast/10 flex items-center justify-center mr-2">
+                <Clock className="h-4 w-4 text-podcast" />
+              </span>
+              Tempo Total Reproduzido
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="text-3xl font-bold text-podcast">
+              {formatMinutes(totalMinutesPlayed)}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Views Chart */}
       <Card className="overflow-hidden shadow-md">
         <CardHeader className="bg-gradient-to-r from-podcast/5 to-podcast/10 border-b">
-          <CardTitle className="text-gray-800">Top 10 Episódios</CardTitle>
+          <CardTitle className="text-gray-800">Top 10 Episódios por Visualizações</CardTitle>
         </CardHeader>
         <CardContent className="pt-6">
           <div className="h-80">
             {viewsData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={chartData}
+                  data={viewsChartData}
                   margin={{ top: 20, right: 30, left: 20, bottom: 70 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
@@ -96,44 +169,136 @@ const ViewsPage = () => {
         </CardContent>
       </Card>
 
+      {/* Play Count and Minutes Played Charts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Play Count Chart */}
+        <Card className="shadow-md">
+          <CardHeader className="bg-gradient-to-r from-podcast/5 to-podcast/10 border-b">
+            <CardTitle className="text-gray-800">Top 5 Episódios por Plays</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="h-80">
+              {playCountData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={playCountData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ title, play_count }) => `${formatEpisodeName(title || '')}: ${play_count}`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="play_count"
+                    >
+                      {playCountData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value, name, props) => [value, 'Plays']}
+                      labelFormatter={(value) => props.payload.title}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-gray-500">Nenhum dado de plays disponível</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Minutes Played Chart */}
+        <Card className="shadow-md">
+          <CardHeader className="bg-gradient-to-r from-podcast/5 to-podcast/10 border-b">
+            <CardTitle className="text-gray-800">Top 5 Episódios por Tempo Reproduzido</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="h-80">
+              {minutesPlayedData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={minutesPlayedData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ title, minutes_played }) => 
+                        `${formatEpisodeName(title || '')}: ${formatMinutes(minutes_played || 0)}`
+                      }
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="minutes_played"
+                    >
+                      {minutesPlayedData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value, name, props) => [formatMinutes(value as number), 'Tempo']}
+                      labelFormatter={(value) => props.payload.title}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-gray-500">Nenhum dado de tempo reproduzido disponível</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Detailed Table */}
       <Card className="shadow-md">
         <CardHeader className="bg-gradient-to-r from-podcast/5 to-podcast/10 border-b">
-          <CardTitle className="text-gray-800">Lista de Visualizações</CardTitle>
+          <CardTitle className="text-gray-800">Estatísticas Detalhadas por Episódio</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3">Episódio</th>
-                  <th className="px-6 py-3">Data de Publicação</th>
-                  <th className="px-6 py-3">Visualizações</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Episódio</TableHead>
+                  <TableHead>Data de Publicação</TableHead>
+                  <TableHead>Visualizações</TableHead>
+                  <TableHead>Plays</TableHead>
+                  <TableHead>Tempo Reproduzido</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {viewsData.length > 0 ? (
                   viewsData.map((item) => (
-                    <tr key={item.id} className="bg-white border-b hover:bg-gray-50">
-                      <td className="px-6 py-4 font-medium text-gray-900 truncate max-w-xs">
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium text-gray-900 truncate max-w-xs">
                         {item.title}
-                      </td>
-                      <td className="px-6 py-4">
+                      </TableCell>
+                      <TableCell>
                         {item.published_at ? format(new Date(item.published_at), 'PPP', { locale: ptBR }) : 'Data desconhecida'}
-                      </td>
-                      <td className="px-6 py-4">
+                      </TableCell>
+                      <TableCell>
                         <span className="font-medium text-podcast">{item.views}</span>
-                      </td>
-                    </tr>
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-medium text-podcast">{item.play_count || 0}</span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-medium text-podcast">{formatMinutes(item.minutes_played || 0)}</span>
+                      </TableCell>
+                    </TableRow>
                   ))
                 ) : (
-                  <tr className="bg-white border-b">
-                    <td colSpan={3} className="px-6 py-4 text-center">
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center">
                       Nenhum dado de visualização disponível
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>

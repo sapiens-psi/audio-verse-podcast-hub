@@ -41,6 +41,8 @@ export type Database = {
           episode_id: string
           id: string
           ip_address: string | null
+          minutes_played: number | null
+          play_count: number | null
           user_id: string | null
           viewed_at: string
         }
@@ -48,6 +50,8 @@ export type Database = {
           episode_id: string
           id?: string
           ip_address?: string | null
+          minutes_played?: number | null
+          play_count?: number | null
           user_id?: string | null
           viewed_at?: string
         }
@@ -55,6 +59,8 @@ export type Database = {
           episode_id?: string
           id?: string
           ip_address?: string | null
+          minutes_played?: number | null
+          play_count?: number | null
           user_id?: string | null
           viewed_at?: string
         }
@@ -138,7 +144,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_episode_statistics: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          episode_id: string
+          title: string
+          published_at: string
+          total_views: number
+          total_play_count: number
+          total_minutes_played: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

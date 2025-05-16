@@ -15,3 +15,21 @@ export const formatTime = (time: number): TimeFormat => {
 export const formatTimeString = (time: TimeFormat): string => {
   return `${time.minutes}:${time.seconds.toString().padStart(2, '0')}`;
 };
+
+// Calculate minutes played from time ranges
+export const calculateMinutesPlayed = (startTime: number, endTime: number): number => {
+  return Math.max(0, (endTime - startTime) / 60);
+};
+
+// Format duration in minutes for display
+export const formatMinutes = (minutes: number): string => {
+  if (minutes < 1) {
+    return `${Math.round(minutes * 60)} segundos`;
+  }
+  if (minutes < 60) {
+    return `${Math.round(minutes)} min`;
+  }
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = Math.round(minutes % 60);
+  return `${hours}h ${remainingMinutes}min`;
+};
