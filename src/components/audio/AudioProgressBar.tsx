@@ -18,10 +18,28 @@ const AudioProgressBar: React.FC<AudioProgressBarProps> = ({
 }) => {
   const currentTimeFormatted = formatTime(currentTime);
   const durationFormatted = formatTime(duration);
-  const { registerPlayback } = useEpisodeViews();
+  const { registerView, registerPlayback } = useEpisodeViews();
   const lastTimeRef = useRef<number>(0);
   const playTimerRef = useRef<NodeJS.Timeout | null>(null);
   const playStartTimeRef = useRef<number | null>(null);
+  const viewRegisteredRef = useRef<boolean>(false);
+
+  // Registrar visualização quando o episódio começa a tocar
+  useEffect(() => {
+    if (episodeId && currentTime > 0 && !viewRegisteredRef.current) {
+      console.log("Registrando visualização inicial para:", episodeId);
+      registerView(episodeId)
+        .then(result => {
+          if (result.success) {
+            console.log("Visualização registrada com sucesso");
+            viewRegisteredRef.current = true;
+          } else {
+            console.error("Erro ao registrar visualização:", result.error);
+          }
+        })
+        .catch(error => console.error("Erro inesperado ao registrar visualização:", error));
+    }
+  }, [episodeId, currentTime]);
 
   // Handle playback tracking
   useEffect(() => {

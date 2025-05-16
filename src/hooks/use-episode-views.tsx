@@ -21,6 +21,7 @@ export function useEpisodeViews() {
         .insert({ 
           episode_id: episodeId,
           viewed_at: new Date().toISOString(),
+          minutes_played: 0 // Inicializa com zero minutos
         })
         .select();
       
@@ -64,24 +65,29 @@ export function useEpisodeViews() {
       const minutesPlayed = calculateMinutesPlayed(startTime, endTime);
       console.log(`Registrando ${minutesPlayed} minutos de reprodução para episódio ${episodeId}`);
       
-      // Buscar se já existe uma visualização para esse episódio hoje
+      // Verificar se já existe uma visualização para esse episódio hoje
+      const today = new Date();
+      const startOfDay = new Date(today);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(today);
+      endOfDay.setHours(23, 59, 59, 999);
+      
       const { data: existingViews } = await supabase
         .from('episode_views')
         .select('id, minutes_played')
         .eq('episode_id', episodeId)
-        .gte('viewed_at', new Date(new Date().setHours(0, 0, 0, 0)).toISOString())
-        .lte('viewed_at', new Date(new Date().setHours(23, 59, 59, 999)).toISOString())
+        .gte('viewed_at', startOfDay.toISOString())
+        .lte('viewed_at', endOfDay.toISOString())
         .order('viewed_at', { ascending: false })
         .limit(1);
       
       if (existingViews && existingViews.length > 0) {
-        // Calculando os novos valores para atualizar
+        // Atualizando visualização existente
         const currentMinutesPlayed = existingViews[0].minutes_played || 0;
         const newMinutesPlayed = currentMinutesPlayed + minutesPlayed;
         
         console.log(`Atualizando visualização existente: ${existingViews[0].id}, minutos atuais: ${currentMinutesPlayed}, novos minutos: ${newMinutesPlayed}`);
         
-        // Atualizar minutos reproduzidos
         const { error } = await supabase
           .from('episode_views')
           .update({ 
@@ -94,8 +100,9 @@ export function useEpisodeViews() {
           return { success: false, error };
         }
       } else {
-        // Criar nova visualização com minutos reproduzidos
+        // Criar nova visualização
         console.log("Criando nova visualização com minutos reproduzidos:", minutesPlayed);
+        
         const { error } = await supabase
           .from('episode_views')
           .insert({ 
@@ -125,6 +132,7 @@ export function useEpisodeViews() {
     setIsLoading(true);
     try {
       console.log("Buscando estatísticas de episódios");
+      
       // Usar a função de agregação para obter estatísticas
       const { data: statistics, error } = await supabase
         .rpc('get_episode_statistics');

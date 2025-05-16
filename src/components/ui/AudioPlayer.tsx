@@ -67,6 +67,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, episodeId, className }) 
         currentTime={currentTime}
         duration={duration}
         handleSeek={handleSeek}
+        episodeId={episodeId}
       />
     </div>
   );

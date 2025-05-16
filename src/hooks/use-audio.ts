@@ -1,197 +1,125 @@
-
-import { useState, useRef, useEffect } from "react";
-import { useEpisodeViews } from "@/hooks/use-episode-views";
+import { useState, useEffect, useRef } from "react";
 
 interface UseAudioProps {
   src: string;
   episodeId?: string;
 }
 
-export function useAudio({ src, episodeId }: UseAudioProps) {
+export const useAudio = ({ src, episodeId }: UseAudioProps) => {
+  const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [volume, setVolume] = useState(1);
-  const [prevVolume, setPrevVolume] = useState(1);
-  const [viewCounted, setViewCounted] = useState(false);
-  const [audioData, setAudioData] = useState<number[]>([]);
-  
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [audioData, setAudioData] = useState<Uint8Array | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const animationRef = useRef<number | null>(null);
-  
-  const { registerView } = useEpisodeViews();
+  const animationFrameRef = useRef<number>(0);
 
-  // Initialize Web Audio API
   useEffect(() => {
-    if (!audioRef.current) return;
+    const setupAudioContext = () => {
+      if (!audioRef.current) return;
 
-    const initializeAudio = () => {
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContext) return;
+      const audioContext = new AudioContext();
+      const analyser = audioContext.createAnalyser();
+      const source = audioContext.createMediaElementSource(audioRef.current);
 
-      audioContextRef.current = new AudioContext();
-      analyserRef.current = audioContextRef.current.createAnalyser();
-      
-      const source = audioContextRef.current.createMediaElementSource(audioRef.current!);
-      source.connect(analyserRef.current);
-      analyserRef.current.connect(audioContextRef.current.destination);
-      
-      analyserRef.current.fftSize = 128;
-      const bufferLength = analyserRef.current.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
-      
-      // Initialize with zero data
-      setAudioData(Array(bufferLength).fill(0));
+      analyser.fftSize = 256;
+      source.connect(analyser);
+      analyser.connect(audioContext.destination);
+
+      audioContextRef.current = audioContext;
+      analyserRef.current = analyser;
+
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      setAudioData(dataArray);
+
+      const updateAudioData = () => {
+        if (analyserRef.current && audioData) {
+          analyserRef.current.getByteFrequencyData(audioData);
+          setAudioData([...audioData]); // Create a new array for React to detect changes
+        }
+        animationFrameRef.current = requestAnimationFrame(updateAudioData);
+      };
+
+      animationFrameRef.current = requestAnimationFrame(updateAudioData);
     };
 
-    // Only initialize if not already done
-    if (!audioContextRef.current) {
-      try {
-        initializeAudio();
-      } catch (error) {
-        console.error("Error initializing Web Audio API:", error);
-      }
+    if (audioRef.current && !audioContextRef.current) {
+      setupAudioContext();
     }
 
     return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+        audioContextRef.current = null;
+        analyserRef.current = null;
       }
     };
-  }, []);
+  }, [audioData]);
 
-  // Start audio visualizer
-  const startVisualizer = () => {
-    if (!analyserRef.current) return;
-    
-    const analyser = analyserRef.current;
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    
-    const renderFrame = () => {
-      animationRef.current = requestAnimationFrame(renderFrame);
-      
-      analyser.getByteFrequencyData(dataArray);
-      setAudioData([...dataArray]);
-    };
-    
-    renderFrame();
-  };
-  
-  // Handle playback toggle
   const togglePlayPause = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    
-    // Resume audioContext if it was suspended (browser policy)
-    if (audioContextRef.current?.state === 'suspended') {
-      audioContextRef.current.resume();
-    }
-    
-    if (isPlaying) {
-      audio.pause();
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-        animationRef.current = null;
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
       }
-    } else {
-      audio.play().then(() => {
-        startVisualizer();
-      }).catch(error => {
-        console.error("Error playing audio:", error);
-      });
+      setIsPlaying(!isPlaying);
     }
-    setIsPlaying(!isPlaying);
   };
 
-  // Update current time while playing
   const handleTimeUpdate = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    
-    setCurrentTime(audio.currentTime);
-    
-    // Register view after 5 seconds of playback if it's a valid episode
-    if (episodeId && !viewCounted && audio.currentTime > 5) {
-      registerView(episodeId);
-      setViewCounted(true);
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime);
     }
   };
 
-  // Handle metadata load to get duration
   const handleLoadedMetadata = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    
-    setDuration(audio.duration);
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration);
+    }
   };
 
-  // Handle time change via slider
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    
-    const newTime = parseFloat(e.target.value);
-    audio.currentTime = newTime;
-    setCurrentTime(newTime);
+    if (audioRef.current) {
+      const seekTime = parseFloat(e.target.value);
+      audioRef.current.currentTime = seekTime;
+      setCurrentTime(seekTime);
+    }
   };
 
-  // Handle volume change
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    
     const newVolume = parseFloat(e.target.value);
-    audio.volume = newVolume;
     setVolume(newVolume);
+    if (audioRef.current) {
+      audioRef.current.volume = newVolume;
+    }
   };
 
-  // Toggle mute
   const toggleMute = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    
-    if (volume > 0) {
-      setPrevVolume(volume);
-      audio.volume = 0;
-      setVolume(0);
-    } else {
-      audio.volume = prevVolume;
-      setVolume(prevVolume);
+    if (audioRef.current) {
+      audioRef.current.muted = !audioRef.current.muted;
+      setVolume(audioRef.current.muted ? 0 : 1);
     }
   };
 
-  // Skip forward 10 seconds
   const skipForward = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    
-    audio.currentTime = Math.min(audio.duration, audio.currentTime + 10);
-  };
-
-  // Skip backward 10 seconds
-  const skipBackward = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    
-    audio.currentTime = Math.max(0, audio.currentTime - 10);
-  };
-
-  // Reset player when audio src changes
-  useEffect(() => {
-    setIsPlaying(false);
-    setCurrentTime(0);
-    setViewCounted(false);
-    
-    // Reset visualizer
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-      animationRef.current = null;
+    if (audioRef.current) {
+      audioRef.current.currentTime += 10;
+      setCurrentTime(audioRef.current.currentTime);
     }
-    
-  }, [src]);
+  };
+
+  const skipBackward = () => {
+    if (audioRef.current) {
+      audioRef.current.currentTime -= 10;
+      setCurrentTime(audioRef.current.currentTime);
+    }
+  };
 
   return {
     audioRef,
@@ -209,4 +137,4 @@ export function useAudio({ src, episodeId }: UseAudioProps) {
     skipForward,
     skipBackward
   };
-}
+};

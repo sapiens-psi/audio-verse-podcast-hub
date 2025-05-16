@@ -23,6 +23,7 @@ const ViewsPage = () => {
     const fetchData = async () => {
       try {
         const data = await getViewsByEpisode();
+        console.log("Dados de visualização obtidos:", data);
         setViewsData(data);
       } catch (error: any) {
         console.error("Erro ao buscar dados:", error);
@@ -132,8 +133,8 @@ const ViewsPage = () => {
                   />
                   <YAxis tick={{ fill: '#6b7280' }} />
                   <Tooltip 
-                    formatter={(value, name) => [value, 'Visualizações']}
-                    labelFormatter={(label) => `${label}`}
+                    formatter={(value: any) => [value, 'Visualizações']}
+                    labelFormatter={(label: any) => `${label}`}
                   />
                   <Legend />
                   <Bar dataKey="views" name="Visualizações" fill="#9E07C0" radius={[4, 4, 0, 0]} />
@@ -163,7 +164,7 @@ const ViewsPage = () => {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ title, minutes_played }) => 
+                    label={({ title, minutes_played }: any) => 
                       `${formatEpisodeName(title || '')}: ${formatMinutes(minutes_played || 0)}`
                     }
                     outerRadius={80}
@@ -175,8 +176,8 @@ const ViewsPage = () => {
                     ))}
                   </Pie>
                   <Tooltip 
-                    formatter={(value) => [formatMinutes(value as number), 'Tempo']}
-                    labelFormatter={(index) => {
+                    formatter={(value: any) => [formatMinutes(value as number), 'Tempo']}
+                    labelFormatter={(index: any) => {
                       const entry = minutesPlayedData[index as number];
                       return entry ? entry.title : '';
                     }}
