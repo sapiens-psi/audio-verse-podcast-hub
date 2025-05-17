@@ -23,10 +23,10 @@ const ViewsPage = () => {
     const fetchData = async () => {
       try {
         const data = await getViewsByEpisode();
-        console.log("Dados de visualização obtidos:", data);
+        console.log("View data retrieved:", data);
         setViewsData(data);
       } catch (error: any) {
-        console.error("Erro ao buscar dados:", error);
+        console.error("Error fetching data:", error);
         toast({
           title: "Erro ao buscar visualizações",
           description: error.message || "Não foi possível carregar os dados de visualizações",

@@ -24,74 +24,76 @@ const AudioProgressBar: React.FC<AudioProgressBarProps> = ({
   const playStartTimeRef = useRef<number | null>(null);
   const viewRegisteredRef = useRef<boolean>(false);
 
-  // Registrar visualização quando o episódio começa a tocar
+  // Register a view when the episode starts playing
   useEffect(() => {
-    if (episodeId && currentTime > 0 && !viewRegisteredRef.current) {
-      console.log("Registrando visualização inicial para:", episodeId);
+    if (!episodeId) return;
+    
+    if (currentTime > 0 && !viewRegisteredRef.current) {
+      console.log("Registering initial view for episode:", episodeId);
       registerView(episodeId)
         .then(result => {
           if (result.success) {
-            console.log("Visualização registrada com sucesso");
+            console.log("View registered successfully");
             viewRegisteredRef.current = true;
           } else {
-            console.error("Erro ao registrar visualização:", result.error);
+            console.error("Error registering view:", result.error);
           }
         })
-        .catch(error => console.error("Erro inesperado ao registrar visualização:", error));
+        .catch(error => console.error("Unexpected error registering view:", error));
     }
-  }, [episodeId, currentTime]);
+  }, [episodeId, currentTime, registerView]);
 
   // Handle playback tracking
   useEffect(() => {
-    if (episodeId && currentTime > 0) {
-      // Track playback every 30 seconds
+    if (!episodeId) return;
+    
+    if (currentTime > 0) {
+      // Set start time when playback begins
+      if (playStartTimeRef.current === null) {
+        playStartTimeRef.current = currentTime;
+        console.log("Initial playback time set:", playStartTimeRef.current);
+      }
+      
+      // Track playback every 15 seconds
       if (!playTimerRef.current) {
-        console.log("Iniciando monitoramento de reprodução para episódio:", episodeId);
-        // Store starting time when playback begins
-        if (playStartTimeRef.current === null) {
-          playStartTimeRef.current = currentTime;
-          console.log("Tempo inicial registrado:", playStartTimeRef.current);
-        }
-        
         playTimerRef.current = setInterval(() => {
           if (playStartTimeRef.current !== null && currentTime > playStartTimeRef.current) {
-            console.log(`Registrando tempo de reprodução: ${playStartTimeRef.current} até ${currentTime}`);
-            // Register the play segment
+            console.log(`Recording playback time: ${playStartTimeRef.current} to ${currentTime}`);
             registerPlayback(episodeId, playStartTimeRef.current, currentTime)
               .then(result => {
                 if (result.success) {
-                  console.log("Tempo de reprodução registrado com sucesso");
+                  console.log("Playback time recorded successfully");
                 } else {
-                  console.error("Erro ao registrar tempo de reprodução:", result.error);
+                  console.error("Error recording playback time:", result.error);
                 }
               })
-              .catch(error => console.error("Erro inesperado ao registrar tempo:", error));
+              .catch(error => console.error("Unexpected error recording playback time:", error));
             
             // Update start time to current time
             playStartTimeRef.current = currentTime;
           }
-        }, 30000); // Every 30 seconds
+        }, 15000); // Every 15 seconds
       }
-
+      
       // Save last time for cleanup
       lastTimeRef.current = currentTime;
     }
 
     return () => {
-      // Clean up interval if component unmounts
+      // Clean up interval when component unmounts or episode changes
       if (playTimerRef.current) {
         clearInterval(playTimerRef.current);
         playTimerRef.current = null;
         
         // Register final segment when unmounting if we were playing
         if (episodeId && playStartTimeRef.current !== null && lastTimeRef.current > playStartTimeRef.current) {
-          console.log(`Registrando tempo final de reprodução: ${playStartTimeRef.current} até ${lastTimeRef.current}`);
+          console.log(`Recording final playback time: ${playStartTimeRef.current} to ${lastTimeRef.current}`);
           registerPlayback(episodeId, playStartTimeRef.current, lastTimeRef.current)
-            .catch(error => console.error("Erro ao registrar tempo final:", error));
+            .catch(error => console.error("Error recording final playback time:", error));
         }
       }
     };
-  }, [episodeId, currentTime]);
+  }, [episodeId, currentTime, registerPlayback]);
 
   return (
     <div className="flex items-center space-x-3">

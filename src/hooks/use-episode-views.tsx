@@ -9,25 +9,25 @@ export function useEpisodeViews() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  // Registrar uma nova visualização para um episódio
+  // Register a new view for an episode
   const registerView = async (episodeId: string) => {
     try {
       setIsLoading(true);
-      console.log("Registrando visualização para episódio:", episodeId);
+      console.log("Registering view for episode:", episodeId);
       
-      // Tenta registrar na tabela episode_views
+      // Try to insert into episode_views table
       const { error, data } = await supabase
         .from('episode_views')
         .insert({ 
           episode_id: episodeId,
           viewed_at: new Date().toISOString(),
-          minutes_played: 0 // Inicializa com zero minutos
+          minutes_played: 0 // Initialize with zero minutes
         })
         .select();
       
       if (error) {
-        console.error("Erro ao registrar visualização no banco:", error);
-        // Fallback para localStorage se ocorrer erro
+        console.error("Database error registering view:", error);
+        // Fallback to localStorage if database error
         const viewsKey = 'podcast_episode_views';
         const storedViews = localStorage.getItem(viewsKey);
         const views = storedViews ? JSON.parse(storedViews) : {};
@@ -38,14 +38,15 @@ export function useEpisodeViews() {
         
         views[episodeId]++;
         localStorage.setItem(viewsKey, JSON.stringify(views));
+        console.log("View saved to localStorage as fallback");
         
         return { success: true, localStorageFallback: true };
       }
       
-      console.log("Visualização registrada com sucesso:", data);
-      return { success: true };
+      console.log("View successfully registered in database:", data);
+      return { success: true, data };
     } catch (error: any) {
-      console.error("Erro ao registrar visualização:", error);
+      console.error("Error registering view:", error);
       toast({
         title: "Erro ao registrar visualização",
         description: error.message,
@@ -57,22 +58,22 @@ export function useEpisodeViews() {
     }
   };
 
-  // Registrar minutos reproduzidos
+  // Register played minutes
   const registerPlayback = async (episodeId: string, startTime: number, endTime: number) => {
     try {
       setIsLoading(true);
       
       const minutesPlayed = calculateMinutesPlayed(startTime, endTime);
-      console.log(`Registrando ${minutesPlayed} minutos de reprodução para episódio ${episodeId}`);
+      console.log(`Recording ${minutesPlayed} minutes of playback for episode ${episodeId}`);
       
-      // Verificar se já existe uma visualização para esse episódio hoje
+      // Check if a view for this episode exists today
       const today = new Date();
       const startOfDay = new Date(today);
       startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date(today);
       endOfDay.setHours(23, 59, 59, 999);
       
-      const { data: existingViews } = await supabase
+      const { data: existingViews, error: queryError } = await supabase
         .from('episode_views')
         .select('id, minutes_played')
         .eq('episode_id', episodeId)
@@ -81,12 +82,17 @@ export function useEpisodeViews() {
         .order('viewed_at', { ascending: false })
         .limit(1);
       
+      if (queryError) {
+        console.error("Error querying existing views:", queryError);
+        return { success: false, error: queryError };
+      }
+      
       if (existingViews && existingViews.length > 0) {
-        // Atualizando visualização existente
+        // Update existing view
         const currentMinutesPlayed = existingViews[0].minutes_played || 0;
         const newMinutesPlayed = currentMinutesPlayed + minutesPlayed;
         
-        console.log(`Atualizando visualização existente: ${existingViews[0].id}, minutos atuais: ${currentMinutesPlayed}, novos minutos: ${newMinutesPlayed}`);
+        console.log(`Updating existing view ${existingViews[0].id}: current minutes: ${currentMinutesPlayed}, adding: ${minutesPlayed}, new total: ${newMinutesPlayed}`);
         
         const { error } = await supabase
           .from('episode_views')
@@ -96,12 +102,15 @@ export function useEpisodeViews() {
           .eq('id', existingViews[0].id);
           
         if (error) {
-          console.error("Erro ao atualizar minutos reproduzidos:", error);
+          console.error("Error updating minutes played:", error);
           return { success: false, error };
         }
+        
+        console.log("Minutes played updated successfully");
+        return { success: true };
       } else {
-        // Criar nova visualização
-        console.log("Criando nova visualização com minutos reproduzidos:", minutesPlayed);
+        // Create new view with minutes played
+        console.log("No existing view found today, creating new one with minutes:", minutesPlayed);
         
         const { error } = await supabase
           .from('episode_views')
@@ -112,39 +121,39 @@ export function useEpisodeViews() {
           });
           
         if (error) {
-          console.error("Erro ao registrar minutos reproduzidos:", error);
+          console.error("Error creating new view with minutes played:", error);
           return { success: false, error };
         }
+        
+        console.log("New view with minutes played created successfully");
+        return { success: true };
       }
-      
-      console.log("Minutos reproduzidos registrados com sucesso");
-      return { success: true };
     } catch (error: any) {
-      console.error("Erro ao registrar minutos reproduzidos:", error);
+      console.error("Error registering minutes played:", error);
       return { success: false, error };
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Obter visualizações por episódio
+  // Get views by episode
   const getViewsByEpisode = async (): Promise<EpisodeViewCount[]> => {
     setIsLoading(true);
     try {
-      console.log("Buscando estatísticas de episódios");
+      console.log("Fetching episode statistics from database");
       
-      // Usar a função de agregação para obter estatísticas
+      // Use the aggregate function to get statistics
       const { data: statistics, error } = await supabase
         .rpc('get_episode_statistics');
 
       if (error) {
-        console.error("Erro ao buscar estatísticas:", error);
+        console.error("Error fetching statistics:", error);
         throw error;
       }
       
-      console.log("Estatísticas obtidas:", statistics);
+      console.log("Statistics retrieved:", statistics);
       
-      // Formatar para o tipo EpisodeViewCount
+      // Format to EpisodeViewCount type
       const formattedData = statistics.map((item: any) => ({
         id: item.episode_id,
         title: item.title,
@@ -155,7 +164,7 @@ export function useEpisodeViews() {
       
       return formattedData;
     } catch (error) {
-      console.error("Erro ao buscar visualizações:", error);
+      console.error("Error fetching view statistics:", error);
       return [];
     } finally {
       setIsLoading(false);
