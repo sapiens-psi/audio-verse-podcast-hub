@@ -30,6 +30,15 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, episodeId, className }) 
     skipBackward
   } = useAudio({ src, episodeId });
 
+  // Log episodeId to check if it's being passed correctly
+  React.useEffect(() => {
+    if (episodeId) {
+      console.log("AudioPlayer received episodeId:", episodeId);
+    } else {
+      console.warn("AudioPlayer: No episodeId provided!");
+    }
+  }, [episodeId]);
+
   return (
     <div className={cn("audio-player-container p-4 bg-gradient-to-r from-[#D1173D]/5 to-[#00A9B0]/5 rounded-lg shadow-md border border-[#FFC325]/20", className)}>
       <audio

@@ -12,13 +12,14 @@ interface ViewsBarChartProps {
 export const ViewsBarChart = ({ viewsData }: ViewsBarChartProps) => {
   // Format episode name for chart
   const formatEpisodeName = (name: string) => {
-    return name.length > 20 ? `${name.substring(0, 20)}...` : name;
+    return name?.length > 20 ? `${name.substring(0, 20)}...` : name || '';
   };
 
   // Prepare chart data for views
   const chartData = viewsData
-    .sort((a, b) => b.views - a.views)
-    .slice(0, 10);
+    ?.filter(item => item && typeof item.views === 'number')
+    ?.sort((a, b) => b.views - a.views)
+    ?.slice(0, 10) || [];
 
   return (
     <Card className="overflow-hidden shadow-md">
@@ -27,7 +28,7 @@ export const ViewsBarChart = ({ viewsData }: ViewsBarChartProps) => {
       </CardHeader>
       <CardContent className="pt-6">
         <div className="h-80">
-          {viewsData.length > 0 ? (
+          {chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={chartData}

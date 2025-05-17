@@ -1,7 +1,7 @@
 
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { 
-  PieChart, Pie, Cell, ResponsiveContainer, Tooltip
+  PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend
 } from "recharts";
 import { EpisodeViewCount } from "@/types/views";
 import { formatMinutes } from "@/components/audio/utils";
@@ -13,16 +13,50 @@ interface PlaytimePieChartProps {
 export const PlaytimePieChart = ({ viewsData }: PlaytimePieChartProps) => {
   // Format episode name for chart
   const formatEpisodeName = (name: string) => {
-    return name.length > 20 ? `${name.substring(0, 20)}...` : name;
+    return name?.length > 20 ? `${name.substring(0, 20)}...` : name || '';
   };
 
+  // Filter out entries with no minutes played or undefined data
+  const validData = viewsData?.filter(item => 
+    item && 
+    typeof item.minutes_played === 'number' && 
+    item.minutes_played > 0
+  ) || [];
+  
   // Prepare chart data for minutes played
-  const chartData = viewsData
+  const chartData = validData
     .sort((a, b) => (b.minutes_played || 0) - (a.minutes_played || 0))
-    .slice(0, 5);
+    .slice(0, 5)
+    .map(item => ({
+      ...item,
+      name: item.title || 'Sem título',
+      value: item.minutes_played || 0
+    }));
 
   // Color configuration for the charts
   const COLORS = ['#9E07C0', '#D1173D', '#FFC325', '#00A9B0', '#6b7280'];
+
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }: any) => {
+    if (!chartData[index]) return null;
+    
+    const RADIAN = Math.PI / 180;
+    const radius = outerRadius * 0.8;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+      <text 
+        x={x} 
+        y={y} 
+        fill="white" 
+        textAnchor={x > cx ? 'start' : 'end'} 
+        dominantBaseline="central"
+        fontSize={12}
+      >
+        {`${formatEpisodeName(chartData[index].name)} (${(percent * 100).toFixed(0)}%)`}
+      </text>
+    );
+  };
 
   return (
     <Card className="shadow-md">
@@ -39,12 +73,10 @@ export const PlaytimePieChart = ({ viewsData }: PlaytimePieChartProps) => {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ title, minutes_played }: any) => 
-                    `${formatEpisodeName(title || '')}: ${formatMinutes(minutes_played || 0)}`
-                  }
+                  label={renderCustomizedLabel}
                   outerRadius={80}
                   fill="#8884d8"
-                  dataKey="minutes_played"
+                  dataKey="value"
                 >
                   {chartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -52,10 +84,10 @@ export const PlaytimePieChart = ({ viewsData }: PlaytimePieChartProps) => {
                 </Pie>
                 <Tooltip 
                   formatter={(value: any) => [formatMinutes(value as number), 'Tempo']}
-                  labelFormatter={(index: any) => {
-                    const entry = chartData[index as number];
-                    return entry ? entry.title : '';
-                  }}
+                  labelFormatter={(name: any) => `${name}`}
+                />
+                <Legend 
+                  formatter={(value, entry, index) => formatEpisodeName(value)}
                 />
               </PieChart>
             </ResponsiveContainer>

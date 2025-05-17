@@ -15,13 +15,19 @@ export function useEpisodeViews() {
       setIsLoading(true);
       console.log("Registering view for episode:", episodeId);
       
+      if (!episodeId) {
+        console.error("Cannot register view: No episodeId provided");
+        return { success: false, error: "No episodeId provided" };
+      }
+      
       // Try to insert into episode_views table
       const { error, data } = await supabase
         .from('episode_views')
         .insert({ 
           episode_id: episodeId,
           viewed_at: new Date().toISOString(),
-          minutes_played: 0 // Initialize with zero minutes
+          minutes_played: 0, // Initialize with zero minutes
+          play_count: 1 // Add play count
         });
       
       if (error) {
@@ -61,6 +67,11 @@ export function useEpisodeViews() {
   const registerPlayback = async (episodeId: string, startTime: number, endTime: number) => {
     try {
       setIsLoading(true);
+      
+      if (!episodeId) {
+        console.error("Cannot register playback: No episodeId provided");
+        return { success: false, error: "No episodeId provided" };
+      }
       
       const minutesPlayed = calculateMinutesPlayed(startTime, endTime);
       console.log(`Recording ${minutesPlayed} minutes of playback for episode ${episodeId}`);
@@ -121,7 +132,8 @@ export function useEpisodeViews() {
           .insert({ 
             episode_id: episodeId,
             viewed_at: new Date().toISOString(),
-            minutes_played: minutesPlayed
+            minutes_played: minutesPlayed,
+            play_count: 1
           });
           
         if (error) {

@@ -17,34 +17,45 @@ export const useAudio = ({ src, episodeId }: UseAudioProps) => {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number>(0);
 
+  // Log episodeId to check if it's being passed correctly
+  useEffect(() => {
+    if (episodeId) {
+      console.log("useAudio hook received episodeId:", episodeId);
+    }
+  }, [episodeId]);
+
   useEffect(() => {
     const setupAudioContext = () => {
       if (!audioRef.current) return;
 
-      const audioContext = new AudioContext();
-      const analyser = audioContext.createAnalyser();
-      const source = audioContext.createMediaElementSource(audioRef.current);
+      try {
+        const audioContext = new AudioContext();
+        const analyser = audioContext.createAnalyser();
+        const source = audioContext.createMediaElementSource(audioRef.current);
 
-      analyser.fftSize = 256;
-      source.connect(analyser);
-      analyser.connect(audioContext.destination);
+        analyser.fftSize = 256;
+        source.connect(analyser);
+        analyser.connect(audioContext.destination);
 
-      audioContextRef.current = audioContext;
-      analyserRef.current = analyser;
+        audioContextRef.current = audioContext;
+        analyserRef.current = analyser;
 
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
-      setAudioData(dataArray);
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        setAudioData(dataArray);
 
-      const updateAudioData = () => {
-        if (analyserRef.current && audioData) {
-          analyserRef.current.getByteFrequencyData(audioData);
-          // Create a copy of the Uint8Array without converting to array
-          setAudioData(new Uint8Array(audioData));
-        }
+        const updateAudioData = () => {
+          if (analyserRef.current && audioData) {
+            analyserRef.current.getByteFrequencyData(audioData);
+            // Create a copy of the Uint8Array without converting to array
+            setAudioData(new Uint8Array(audioData));
+          }
+          animationFrameRef.current = requestAnimationFrame(updateAudioData);
+        };
+
         animationFrameRef.current = requestAnimationFrame(updateAudioData);
-      };
-
-      animationFrameRef.current = requestAnimationFrame(updateAudioData);
+      } catch (error) {
+        console.error("Error setting up audio context:", error);
+      }
     };
 
     if (audioRef.current && !audioContextRef.current) {

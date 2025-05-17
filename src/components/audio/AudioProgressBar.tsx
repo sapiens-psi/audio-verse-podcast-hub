@@ -27,7 +27,10 @@ const AudioProgressBar: React.FC<AudioProgressBarProps> = ({
 
   // Register a view when the episode starts playing
   useEffect(() => {
-    if (!episodeId) return;
+    if (!episodeId) {
+      console.log("No episodeId provided to AudioProgressBar");
+      return;
+    }
     
     if (currentTime > 0 && !viewRegisteredRef.current) {
       console.log("Registering initial view for episode:", episodeId);
@@ -46,6 +49,11 @@ const AudioProgressBar: React.FC<AudioProgressBarProps> = ({
     // Check if the player is actually playing based on time progression
     if (currentTime > lastTimeRef.current) {
       isPlayingRef.current = true;
+      // If playback starts and we don't have a start time yet, set it
+      if (playStartTimeRef.current === null) {
+        playStartTimeRef.current = currentTime;
+        console.log("Initial playback time set:", playStartTimeRef.current);
+      }
     }
     
     lastTimeRef.current = currentTime;
@@ -56,12 +64,6 @@ const AudioProgressBar: React.FC<AudioProgressBarProps> = ({
     if (!episodeId) return;
     
     if (currentTime > 0 && isPlayingRef.current) {
-      // Set start time when playback begins
-      if (playStartTimeRef.current === null) {
-        playStartTimeRef.current = currentTime;
-        console.log("Initial playback time set:", playStartTimeRef.current);
-      }
-      
       // Track playback every 15 seconds
       if (!playTimerRef.current) {
         playTimerRef.current = setInterval(() => {
@@ -71,6 +73,8 @@ const AudioProgressBar: React.FC<AudioProgressBarProps> = ({
               .then(result => {
                 if (result.success) {
                   console.log("Playback time recorded successfully");
+                } else if (result.skipped) {
+                  console.log("Playback recording skipped (no significant time elapsed)");
                 } else {
                   console.error("Error recording playback time:", result.error);
                 }
