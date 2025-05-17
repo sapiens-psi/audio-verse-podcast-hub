@@ -2,7 +2,7 @@
 import React, { useRef, useEffect } from "react";
 
 interface AudioVisualizerProps {
-  audioData: number[];
+  audioData: Uint8Array | null;
   isPlaying: boolean;
   height?: number;
 }
@@ -28,7 +28,7 @@ const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
     ctx.clearRect(0, 0, width, canvasHeight);
     
     // Only draw if there's actually data and we're playing
-    if (audioData.length > 0 && isPlaying) {
+    if (audioData && audioData.length > 0 && isPlaying) {
       const bufferLength = audioData.length;
       const barWidth = width / bufferLength * 2.5;
       let x = 0;

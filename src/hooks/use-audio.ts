@@ -37,7 +37,8 @@ export const useAudio = ({ src, episodeId }: UseAudioProps) => {
       const updateAudioData = () => {
         if (analyserRef.current && audioData) {
           analyserRef.current.getByteFrequencyData(audioData);
-          setAudioData([...audioData]); // Create a new array for React to detect changes
+          // Create a copy of the Uint8Array without converting to array
+          setAudioData(new Uint8Array(audioData));
         }
         animationFrameRef.current = requestAnimationFrame(updateAudioData);
       };
