@@ -41,6 +41,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, episodeId, className }) 
           // Reset the visualizer and playing state when audio ends
           if (audioRef.current) {
             audioRef.current.currentTime = 0;
+            console.log("Audio ended, resetting to beginning");
           }
         }}
       />

@@ -42,6 +42,12 @@ const AudioPlayerCard: React.FC<AudioPlayerCardProps> = ({
     setIsExpanded(expanded);
   }, [expanded]);
 
+  useEffect(() => {
+    if (episodeId) {
+      console.log("AudioPlayerCard received episodeId:", episodeId);
+    }
+  }, [episodeId]);
+
   return (
     <AnimatePresence>
       <motion.div 

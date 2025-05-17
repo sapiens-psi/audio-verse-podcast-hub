@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 
 interface UseAudioProps {
@@ -66,8 +67,15 @@ export const useAudio = ({ src, episodeId }: UseAudioProps) => {
     if (audioRef.current) {
       if (isPlaying) {
         audioRef.current.pause();
+        console.log("Audio paused at time:", audioRef.current.currentTime);
       } else {
-        audioRef.current.play();
+        audioRef.current.play()
+          .then(() => {
+            console.log("Audio started playing at time:", audioRef.current.currentTime);
+          })
+          .catch(error => {
+            console.error("Error playing audio:", error);
+          });
       }
       setIsPlaying(!isPlaying);
     }
@@ -82,6 +90,7 @@ export const useAudio = ({ src, episodeId }: UseAudioProps) => {
   const handleLoadedMetadata = () => {
     if (audioRef.current) {
       setDuration(audioRef.current.duration);
+      console.log("Audio metadata loaded, duration:", audioRef.current.duration);
     }
   };
 
@@ -90,6 +99,7 @@ export const useAudio = ({ src, episodeId }: UseAudioProps) => {
       const seekTime = parseFloat(e.target.value);
       audioRef.current.currentTime = seekTime;
       setCurrentTime(seekTime);
+      console.log("Seek to time:", seekTime);
     }
   };
 

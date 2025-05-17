@@ -22,11 +22,10 @@ export function useEpisodeViews() {
           episode_id: episodeId,
           viewed_at: new Date().toISOString(),
           minutes_played: 0 // Initialize with zero minutes
-        })
-        .select();
+        });
       
       if (error) {
-        console.error("Database error registering view:", error);
+        console.error("Database error registering view:", error.message);
         // Fallback to localStorage if database error
         const viewsKey = 'podcast_episode_views';
         const storedViews = localStorage.getItem(viewsKey);
@@ -40,7 +39,7 @@ export function useEpisodeViews() {
         localStorage.setItem(viewsKey, JSON.stringify(views));
         console.log("View saved to localStorage as fallback");
         
-        return { success: true, localStorageFallback: true };
+        return { success: true, localStorageFallback: true, error: error.message };
       }
       
       console.log("View successfully registered in database:", data);
@@ -49,7 +48,7 @@ export function useEpisodeViews() {
       console.error("Error registering view:", error);
       toast({
         title: "Erro ao registrar visualização",
-        description: error.message,
+        description: error.message || "Não foi possível registrar a visualização do episódio",
         variant: "destructive",
       });
       return { success: false, error };
@@ -65,6 +64,11 @@ export function useEpisodeViews() {
       
       const minutesPlayed = calculateMinutesPlayed(startTime, endTime);
       console.log(`Recording ${minutesPlayed} minutes of playback for episode ${episodeId}`);
+      
+      if (minutesPlayed <= 0) {
+        console.log("No minutes played, skipping registration");
+        return { success: true, skipped: true };
+      }
       
       // Check if a view for this episode exists today
       const today = new Date();
@@ -83,7 +87,7 @@ export function useEpisodeViews() {
         .limit(1);
       
       if (queryError) {
-        console.error("Error querying existing views:", queryError);
+        console.error("Error querying existing views:", queryError.message);
         return { success: false, error: queryError };
       }
       
@@ -102,7 +106,7 @@ export function useEpisodeViews() {
           .eq('id', existingViews[0].id);
           
         if (error) {
-          console.error("Error updating minutes played:", error);
+          console.error("Error updating minutes played:", error.message);
           return { success: false, error };
         }
         
@@ -121,7 +125,7 @@ export function useEpisodeViews() {
           });
           
         if (error) {
-          console.error("Error creating new view with minutes played:", error);
+          console.error("Error creating new view with minutes played:", error.message);
           return { success: false, error };
         }
         
@@ -129,7 +133,7 @@ export function useEpisodeViews() {
         return { success: true };
       }
     } catch (error: any) {
-      console.error("Error registering minutes played:", error);
+      console.error("Error registering minutes played:", error.message);
       return { success: false, error };
     } finally {
       setIsLoading(false);
@@ -147,7 +151,7 @@ export function useEpisodeViews() {
         .rpc('get_episode_statistics');
 
       if (error) {
-        console.error("Error fetching statistics:", error);
+        console.error("Error fetching statistics:", error.message);
         throw error;
       }
       

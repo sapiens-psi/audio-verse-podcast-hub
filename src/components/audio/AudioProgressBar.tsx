@@ -23,6 +23,7 @@ const AudioProgressBar: React.FC<AudioProgressBarProps> = ({
   const playTimerRef = useRef<NodeJS.Timeout | null>(null);
   const playStartTimeRef = useRef<number | null>(null);
   const viewRegisteredRef = useRef<boolean>(false);
+  const isPlayingRef = useRef<boolean>(false);
 
   // Register a view when the episode starts playing
   useEffect(() => {
@@ -41,13 +42,20 @@ const AudioProgressBar: React.FC<AudioProgressBarProps> = ({
         })
         .catch(error => console.error("Unexpected error registering view:", error));
     }
+
+    // Check if the player is actually playing based on time progression
+    if (currentTime > lastTimeRef.current) {
+      isPlayingRef.current = true;
+    }
+    
+    lastTimeRef.current = currentTime;
   }, [episodeId, currentTime, registerView]);
 
   // Handle playback tracking
   useEffect(() => {
     if (!episodeId) return;
     
-    if (currentTime > 0) {
+    if (currentTime > 0 && isPlayingRef.current) {
       // Set start time when playback begins
       if (playStartTimeRef.current === null) {
         playStartTimeRef.current = currentTime;
@@ -74,9 +82,6 @@ const AudioProgressBar: React.FC<AudioProgressBarProps> = ({
           }
         }, 15000); // Every 15 seconds
       }
-      
-      // Save last time for cleanup
-      lastTimeRef.current = currentTime;
     }
 
     return () => {
